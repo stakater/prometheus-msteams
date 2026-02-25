@@ -1,0 +1,14 @@
+profile: '' # set via github action
+# Holds coverage thresholds percentages, values should be in range [0-100].
+threshold:
+  file: 50
+  package: 60
+  total: 65
+exclude:
+  paths:
+    #- ^cmd/main\.go
+    #- ^test/utils/.*
+    - third_party/.*
+    - builtin/.*
+    - examples/.*
+    - pkg/adaptivecards/examples$

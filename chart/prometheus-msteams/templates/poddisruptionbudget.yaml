@@ -1,0 +1,23 @@
+{{- if .Values.podDisruptionBudget.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "app.name" . }}
+  labels: {{- include "app.labels" . | nindent 4 }}
+  {{- with .Values.podDisruptionBudget.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if and (.Values.podDisruptionBudget.maxUnavailable) (not .Values.podDisruptionBudget.minAvailable) }}
+  maxUnavailable: {{ .Values.podDisruptionBudget.maxUnavailable }}
+  {{- else }}
+  minAvailable: {{ .Values.podDisruptionBudget.minAvailable | default 1 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "app.selectorLabels" . | nindent 6 }}
+      {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 6 }}
+      {{- end }}
+{{- end }}

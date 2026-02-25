@@ -1,0 +1,156 @@
+/*
+Copyright 2026 Stakater.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+// Package transport provides the web server and handlers for incoming requests.
+package transport
+
+import (
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"time"
+
+	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/log/level"
+	"github.com/prometheus/alertmanager/notify/webhook"
+	"go.opencensus.io/plugin/ochttp"
+	"go.opencensus.io/trace"
+
+	"github.com/labstack/echo/v4"
+	"github.com/stakater/prometheus-msteams/pkg/service"
+)
+
+// Route holds the Service implementation and the Request path to serve the Service.
+type Route struct {
+	Service     service.Service
+	RequestPath string
+}
+
+// DynamicRoute holds the Request path to generate the service based on request (e.g. path)
+type DynamicRoute struct {
+	ServiceGenerator ServiceGenerator
+	RequestPath      string
+}
+
+// ServiceGenerator creates a service on data from request (echo.Context)
+type ServiceGenerator func(echo.Context) (service.Service, error)
+
+// NewServer creates the web server.
+func NewServer(logger log.Logger, routes []Route, dRoutes []DynamicRoute) *echo.Echo {
+	e := echo.New()
+	for _, r := range routes {
+		_ = level.Debug(logger).Log("request_path_added", r.RequestPath)
+		addRoute(e, r.RequestPath, r.Service, logger)
+	}
+	for _, r := range dRoutes {
+		_ = level.Debug(logger).Log("request_path_added", r.RequestPath)
+		addContextAwareRoute(e, r.RequestPath, r.ServiceGenerator, logger)
+	}
+	e.HideBanner = true
+	return e
+}
+
+func opencensusMiddleware() echo.MiddlewareFunc {
+	return echo.WrapMiddleware(func(h http.Handler) http.Handler {
+		return &ochttp.Handler{
+			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				h.ServeHTTP(w, r)
+			}),
+		}
+	})
+}
+
+func kitLoggerMiddleware(logger log.Logger) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			defer func(begin time.Time) {
+				res := c.Response()
+				req := c.Request()
+				_ = logger.Log(
+					"method", req.Method,
+					"uri", req.RequestURI,
+					"host", req.Host,
+					"status", res.Status,
+					"took", time.Since(begin),
+				)
+			}(time.Now())
+			return next(c)
+		}
+	}
+}
+
+func addRoute(e *echo.Echo, p string, s service.Service, logger log.Logger) {
+	e.POST(p, func(c echo.Context) error {
+		return handleRoute(c, s, logger)
+	},
+		kitLoggerMiddleware(logger),
+		opencensusMiddleware(),
+	)
+}
+
+func addContextAwareRoute(e *echo.Echo, p string, w ServiceGenerator, logger log.Logger) {
+	e.POST(p, func(c echo.Context) error {
+		s, err := w(c)
+		if err != nil {
+			return err
+		}
+		if s == nil {
+			return fmt.Errorf("invalid request. No service was returned")
+		}
+		return handleRoute(c, s, logger)
+	},
+		kitLoggerMiddleware(logger),
+		opencensusMiddleware(),
+	)
+}
+
+func handleRoute(c echo.Context, s service.Service, logger log.Logger) error {
+	ctx, span := trace.StartSpan(c.Request().Context(), "alertmanager-handler")
+	defer span.End()
+
+	b, err := io.ReadAll(c.Request().Body)
+	if err != nil {
+		_ = logger.Log("err", err)
+		span.SetStatus(trace.Status{Code: 500, Message: err.Error()})
+		return c.String(500, err.Error())
+	}
+
+	span.AddAttributes(trace.StringAttribute("alert", string(b)))
+
+	var wm webhook.Message
+	if err := json.Unmarshal(b, &wm); err != nil {
+		_ = logger.Log("err", err)
+		span.SetStatus(trace.Status{Code: 500, Message: err.Error()})
+		return c.String(500, err.Error())
+	}
+
+	if wm.Data == nil || wm.Version == "" || wm.GroupKey == "" {
+		err = fmt.Errorf("the webhook message does not seem to be a valid Prometheus Alertmanager webhook. More information see https://prometheus.io/docs/alerting/latest/configuration/#webhook_config")
+		_ = logger.Log("err", err)
+		span.SetStatus(trace.Status{Code: 500, Message: err.Error()})
+		return c.String(500, err.Error())
+	}
+
+	prs, err := s.Post(ctx, wm)
+	if err != nil {
+		_ = logger.Log("err", err)
+		span.SetStatus(trace.Status{Code: 500, Message: err.Error()})
+		return c.String(500, err.Error())
+	}
+
+	return c.JSON(200, prs)
+}

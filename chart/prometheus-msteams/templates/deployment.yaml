@@ -1,0 +1,109 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "app.name" . }}
+  labels: {{- include "app.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "app.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "app.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        checksum/config:
+          {{- (tpl (.Files.Get (print .Template.BasePath "/data/configMapConfig.yaml")) .) | sha256sum | nindent 10 }}
+        checksum/msteams-card-templates:
+          {{- (tpl (.Files.Get (print .Template.BasePath "/data/configMapTemplate.yaml")) .) | sha256sum | nindent 10 }}
+        {{- with .Values.podAnnotations }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "app.serviceAccountName" . }}
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets: {{- toYaml .Values.imagePullSecrets | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: config-volume
+          configMap:
+            name: {{ include "app.name" . }}-config
+        - name: card-template-volume
+          configMap:
+            name: {{ include "app.name" . }}-card-template
+      {{- if .Values.extraConfigmapMounts }}
+      {{ toYaml .Values.extraConfigmapMounts | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ include "app.name" . }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          {{- with .Values.securityContext -}}
+          securityContext:
+            {{- toYaml . | nindent 10 }}
+          {{- end }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.extraEnvs }}
+          env:
+            {{- range $key, $value := . }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          {{- end }}
+          {{- with .Values.envFrom }}
+          envFrom: {{- toYaml . | nindent 10 }}
+          {{- end }}
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/config
+            - name: card-template-volume
+              mountPath: /etc/template
+          {{- with .Values.extraVolumeMounts }}
+            {{- toYaml . | nindent 10 }}
+          {{- end }}
+          args:
+            - -config-file=/etc/config/connectors.yaml
+            - -template-file={{ .Values.templateFile | default "/etc/template/card.tmpl" }}
+            {{- with .Values.workflowWebhook }}
+            - -workflow-webhook={{ . }}
+            {{- end }}
+            {{- with .Values.container.additionalArgs }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+          ports:
+          - name: http
+            containerPort: {{ .Values.container.port | default "2000" }}
+            protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /config
+              port: http
+            initialDelaySeconds: 1
+            periodSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /config
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          {{- with .Values.resources }}
+          resources:  {{ toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.podSecurityContext }}
+      securityContext: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.priorityClassName }}
+      priorityClassName: {{ . | quote }}
+      {{- end }}

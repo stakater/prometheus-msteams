@@ -1,0 +1,93 @@
+{
+  "type": "AdaptiveCard",
+  "version": "1.5",
+  "body": [
+    {
+      "type": "Container",
+      "showBorder": true,
+      "roundedCorners": true,
+      "items": [
+        {
+          "type": "TextBlock",
+          "text": "Default container style",
+          "wrap": true,
+          "size": "Large"
+        }
+      ]
+    },
+    {
+      "type": "Container",
+      "showBorder": true,
+      "roundedCorners": true,
+      "items": [
+        {
+          "type": "TextBlock",
+          "text": "Emphasis container style",
+          "wrap": true,
+          "size": "Large"
+        }
+      ],
+      "style": "emphasis"
+    },
+    {
+      "type": "Container",
+      "showBorder": true,
+      "roundedCorners": true,
+      "items": [
+        {
+          "type": "TextBlock",
+          "text": "Accent container style",
+          "wrap": true,
+          "size": "Large",
+          "color": "Accent"
+        }
+      ],
+      "style": "accent"
+    },
+    {
+      "type": "Container",
+      "showBorder": true,
+      "roundedCorners": true,
+      "items": [
+        {
+          "type": "TextBlock",
+          "text": "Good container style",
+          "wrap": true,
+          "size": "Large",
+          "color": "Good"
+        }
+      ],
+      "style": "good"
+    },
+    {
+      "type": "Container",
+      "showBorder": true,
+      "roundedCorners": true,
+      "items": [
+        {
+          "type": "TextBlock",
+          "text": "Attention container style",
+          "wrap": true,
+          "size": "Large",
+          "color": "Attention"
+        }
+      ],
+      "style": "attention"
+    },
+    {
+      "type": "Container",
+      "showBorder": true,
+      "roundedCorners": true,
+      "items": [
+        {
+          "type": "TextBlock",
+          "text": "Warning container style",
+          "wrap": true,
+          "size": "Large",
+          "color": "Warning"
+        }
+      ],
+      "style": "warning"
+    }
+  ]
+}
