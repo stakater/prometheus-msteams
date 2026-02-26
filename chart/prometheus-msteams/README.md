@@ -30,8 +30,8 @@ Create a helm values file to configure your Microsoft Teams channel connectors a
 ---
 replicaCount: 1
 image:
-  repository: quay.io/prometheusmsteams/prometheus-msteams
-  tag: v1.5.1
+  repository: ghcr.io/stakater/prometheus-msteams
+  tag: v1.0.0
 
 connectors:
 # in alertmanager, this will be used as http://prometheus-msteams:2000/bar
@@ -129,8 +129,8 @@ connectorsWithCustomTemplates:
 
 | Parameter | Description | Default |
 | --------- | ----------- | ------- |
-| `image.repository` | Image repository | `quay.io/prometheusmsteams/prometheus-msteams` |
-| `image.tag` | Image tag | `v1.5.1` |
+| `image.repository` | Image repository | `ghcr.io/stakater/prometheus-msteams` |
+| `image.tag` | Image tag | `v1.0.0` |
 | `image.pullPolicy` | Image pull policy | `Always` |
 | `imagePullSecrets` | Configuration for [imagePullSecrets](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/#create-a-pod-that-uses-your-secret) so that you can use a private registry for your image | `[]` |
 | `extraEnvs` | Extra environment variables | `{}` |
