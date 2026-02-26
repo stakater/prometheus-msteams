@@ -4,5 +4,5 @@ description: A Helm chart for Kubernetes
 name: prometheus-msteams
 version: 1.0.0
 maintainers:
-  - name: Stakater AB
+  - name: stakater
     url: https://github.com/stakater
