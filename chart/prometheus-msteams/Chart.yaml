@@ -1,8 +1,8 @@
 apiVersion: v2
-appVersion: "v1.0.0"
+appVersion: "v1.0.1"
 description: A Helm chart for Kubernetes
 name: prometheus-msteams
-version: 1.0.0
+version: 1.0.1
 icon: https://raw.githubusercontent.com/stakater/prometheus-msteams/refs/heads/main/logo.svg
 maintainers:
   - name: stakater

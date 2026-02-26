@@ -3,7 +3,8 @@ replicaCount: 1
 
 image:
   repository: ghcr.io/stakater/prometheus-msteams
-  tag: v1.0.0
+  # Remove comment to override the default tag (which is the chart appVersion)
+  #tag: v1.0.0
   pullPolicy: Always
 
 imagePullSecrets: []
