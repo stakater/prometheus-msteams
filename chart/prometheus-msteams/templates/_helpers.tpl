@@ -99,5 +99,6 @@ Create the card template to use.
 {{- $d := (dict $key ($c.template_file | b64enc)) -}}
 {{- $result = append $result $d -}}
 {{- end }}
+{{- end }}
 {{- $result | toYaml -}}
 {{- end }}

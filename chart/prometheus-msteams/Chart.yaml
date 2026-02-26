@@ -3,6 +3,7 @@ appVersion: "v1.0.0"
 description: A Helm chart for Kubernetes
 name: prometheus-msteams
 version: 1.0.0
+icon: https://raw.githubusercontent.com/stakater/prometheus-msteams/refs/heads/main/logo.svg
 maintainers:
   - name: stakater
     url: https://github.com/stakater

@@ -30,18 +30,19 @@ jobs:
           CONTAINER_REGISTRY_USERNAME: ${{ env.GHCR_USERNAME }}
           CONTAINER_REGISTRY_PASSWORD: ${{ secrets.GHCR_TOKEN }}
 
+      #- name: Generate image tag
+      #  id: tag
+      #  uses: stakater/.github/.github/actions/operator/tag@main
+      #  env:
+      #    AUTO_GENERATED: true
+      #    TAGGING_STRATEGY: commit-sha
+
       - name: Generate image tag
         id: tag
-        uses: stakater/.github/.github/actions/operator/tag@main
-        env:
-          AUTO_GENERATED: true
-          TAGGING_STRATEGY: commit-sha
-
-
-
-
-
-
+        run: |
+          sha=${{ github.event.pull_request.head.sha }}
+          tag="SNAPSHOT-PR-${{ github.event.pull_request.number }}-${sha:0:8}"
+          echo "TAG=$(echo ${tag})" >> $GITHUB_OUTPUT
 
       - name: Build Docker image
         run: make all test
