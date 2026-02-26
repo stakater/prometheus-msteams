@@ -1,0 +1,9 @@
+connectors:
+  - /alertmanager: "https://example.webhook.office.com/webhookb2/test-id@test-tenant/IncomingWebhook/test-channel/test-token"
+  - /test: "https://test.webhook.office.com/webhookb2/test-id2@test-tenant2/IncomingWebhook/test-channel2/test-token2"
+
+connectors_with_custom_templates:
+  - request_path: /custom
+    template_file: ../../../default-message-workflow-card.tmpl
+    webhook_url: "https://custom.webhook.office.com/webhookb2/custom-id@custom-tenant/IncomingWebhook/custom-channel/custom-token"
+    escape_underscores: true

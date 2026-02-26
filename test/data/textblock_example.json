@@ -1,0 +1,82 @@
+{
+  "type": "AdaptiveCard",
+  "version": "1.5",
+  "body": [
+    {
+      "type": "TextBlock",
+      "text": "Lorem ipsum dolor",
+      "wrap": true,
+      "size": "Small"
+    },
+    {
+      "type": "TextBlock",
+      "text": "Lorem ipsum dolor",
+      "wrap": true,
+      "size": "Default"
+    },
+    {
+      "type": "TextBlock",
+      "text": "Lorem ipsum dolor",
+      "wrap": true,
+      "size": "Large"
+    },
+    {
+      "type": "TextBlock",
+      "text": "Lorem ipsum dolor",
+      "wrap": true,
+      "size": "ExtraLarge"
+    },
+    {
+      "type": "Container",
+      "layouts": [
+        {
+          "type": "Layout.Flow",
+          "horizontalItemsAlignment": "Left",
+          "minItemWidth": "0px"
+        }
+      ],
+      "items": [
+        {
+          "type": "TextBlock",
+          "text": "Default",
+          "wrap": true
+        },
+        {
+          "type": "TextBlock",
+          "text": "Accent",
+          "wrap": true,
+          "color": "Accent"
+        },
+        {
+          "type": "TextBlock",
+          "text": "Good",
+          "wrap": true,
+          "color": "Good"
+        },
+        {
+          "type": "TextBlock",
+          "text": "Warning",
+          "wrap": true,
+          "color": "Warning"
+        },
+        {
+          "type": "TextBlock",
+          "text": "Attention",
+          "wrap": true,
+          "color": "Attention"
+        }
+      ],
+      "separator": true,
+      "spacing": "ExtraLarge"
+    },
+    {
+      "type": "TextBlock",
+      "text": "Monospace",
+      "wrap": true,
+      "fontType": "Monospace",
+      "size": "Large",
+      "separator": true,
+      "spacing": "ExtraLarge"
+    }
+  ]
+}

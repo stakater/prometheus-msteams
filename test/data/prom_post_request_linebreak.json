@@ -1,0 +1,66 @@
+{
+  "version": "4",
+  "groupKey": "{}/{severity=~\"2|3|warning|critical\"}/{severity=~\"2|warning\"}:{alertname=\"ContainerMemorySteepTrend\"}",
+  "status": "firing",
+  "receiver": "msteams-dc-prod-webhook-warning",
+  "groupLabels": {
+    "alertname": "ContainerMemorySteepTrend"
+  },
+  "commonLabels": {
+    "alertname": "ContainerMemorySteepTrend",
+    "container": "manager",
+    "endpoint": "https-metrics",
+    "id": "/kubepods.slice/kubepods-burstable.slice/kubepods-burstable-pod8872d0a3_f8ba_4132_9626_09f4a41691d7.slice/crio-18f33316b8f7395506e7ee8c7b84e78bcce6b0a95b069fc1dd20116e5eb0302f.scope",
+    "image": "mcr.microsoft.com/k8s/azureserviceoperator:v2.15.1",
+    "instance": "10.230.106.141:10250",
+    "job": "kubelet",
+    "metrics_path": "/metrics/cadvisor",
+    "name": "k8s_manager_azureserviceoperator-controller-manager-789c57675-4wrg9_azureserviceoperator-system_8872d0a3-f8ba-4132-9626-09f4a41691d7_366",
+    "namespace": "azureserviceoperator-system",
+    "node": "k8s-7ps62-worker-1",
+    "openshift_io_alert_source": "platform",
+    "pod": "azureserviceoperator-controller-manager-789c57675-4wrg9",
+    "prometheus": "openshift-monitoring/k8s",
+    "service": "kubelet",
+    "severity": "warning"
+  },
+  "commonAnnotations": {
+    "description": "Memory usage is trending to hit the limit within 8h based on the last 4h of data.\n",
+    "runbook_url": "https://runbooks.prometheus-operator.dev",
+    "summary": "Steep memory growth in manager"
+  },
+  "externalURL": "http://docker.for.mac.host.internal:9093",
+  "truncatedAlerts": 0,
+  "alerts": [
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "ContainerMemorySteepTrend",
+        "container": "manager",
+        "endpoint": "https-metrics",
+        "id": "/kubepods.slice/kubepods-burstable.slice/kubepods-burstable-pod8872d0a3_f8ba_4132_9626_09f4a41691d7.slice/crio-18f33316b8f7395506e7ee8c7b84e78bcce6b0a95b069fc1dd20116e5eb0302f.scope",
+        "image": "mcr.microsoft.com/k8s/azureserviceoperator:v2.15.1",
+        "instance": "10.230.106.141:10250",
+        "job": "kubelet",
+        "metrics_path": "/metrics/cadvisor",
+        "name": "k8s_manager_azureserviceoperator-controller-manager-789c57675-4wrg9_azureserviceoperator-system_8872d0a3-f8ba-4132-9626-09f4a41691d7_366",
+        "namespace": "azureserviceoperator-system",
+        "node": "k8s-7ps62-worker-1",
+        "openshift_io_alert_source": "platform",
+        "pod": "azureserviceoperator-controller-manager-789c57675-4wrg9",
+        "prometheus": "openshift-monitoring/k8s",
+        "service": "kubelet",
+        "severity": "warning"
+      },
+      "annotations": {
+        "description": "Memory usage is trending to hit the limit within 8h based on the last 4h of data.\n",
+        "runbook_url": "https://runbooks.prometheus-operator.dev",
+        "summary": "Steep memory growth in manager"
+      },
+      "startsAt": "2026-01-01T01:04:08.865Z",
+      "endsAt": "0001-01-01T00:00:00Z",
+      "generatorURL": "http://docker.for.mac.host.internal:9093/monitoring/graph?g0.expr=predict_linear%28container_memory_working_set_bytes%7Bcontainer%21%3D%22%22%7D%5B4h%5D%2C+28800%29+%3E+on+%28pod%2C+container%2C+namespace%29+group_left+%28%29+sum+by+%28pod%2C+container%2C+namespace%29+%28kube_pod_container_resource_limits%7Bresource%3D%22memory%22%7D%29&g0.tab=1",
+      "fingerprint": "94af01480b2dd69d"
+    }
+  ]
+}

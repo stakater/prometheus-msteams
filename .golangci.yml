@@ -1,0 +1,133 @@
+version: "2"
+
+run:
+  modules-download-mode: readonly
+  allow-parallel-runners: true
+
+linters:
+  default: none
+  enable:
+    - bodyclose
+    - depguard
+    - dogsled
+    - dupl
+    - errcheck
+    - funlen
+    #- gochecknoinits
+    - goconst
+    - gocritic
+    - gocyclo
+    - goprintffuncname
+    - gosec
+    #- gosimple
+    - govet
+    - ineffassign
+    - misspell
+    - nakedret
+    - revive
+    - rowserrcheck
+    - staticcheck
+    #- stylecheck
+    #- typecheck
+    - unconvert
+    - unparam
+    - unused
+    - whitespace
+  exclusions:
+    generated: lax
+    rules:
+      - linters:
+        - revive
+        text: "don't use ALL_CAPS in Go names"
+      - linters:
+        - stylecheck
+        text: "ST1003: should not use ALL_CAPS in Go names"
+      # Exclude some linters from running on tests files.
+      - path: _test\.go
+        linters:
+          - gocyclo
+          - errcheck
+          - dupl
+          - gosec
+          - funlen
+
+      - linters:
+          - lll
+        path: api/*
+      - linters:
+          - dupl
+          - lll
+        path: internal/*
+      # Allow dot-imports in these specific helper files
+      - path: '(^|.*/)[test|internal]/utils/[utils|shared]\.go$'
+        linters:
+          - staticcheck
+        text: '^ST1001: should not use dot imports'
+      # Also allow in any *_test.go file
+      - path: '.*_test\.go$'
+        linters:
+          - staticcheck
+        text: '^ST1001: should not use dot imports'
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+  settings:
+    funlen:
+      lines: 120
+      statements: 50
+    misspell:
+      locale: US
+    depguard:
+      rules:
+        main:
+          allow:
+          - $gostd
+
+          - contrib.go.opencensus.io/exporter/jaeger
+          - contrib.go.opencensus.io/exporter/prometheus
+          - go.opencensus.io/plugin/ochttp
+          - go.opencensus.io/stats/view
+          - go.opencensus.io/tag
+          - go.opencensus.io/trace
+          - github.com/go-kit/kit/log
+          - github.com/google/go-cmp/cmp
+          - github.com/hashicorp/go-retryablehttp
+          - github.com/josephburnett/jd/lib
+          - github.com/labstack/echo/v4
+          - github.com/oklog/run
+          - github.com/peterbourgon/ff
+          - github.com/pkg/errors
+          - github.com/prometheus/alertmanager/notify/webhook
+          - github.com/prometheus/alertmanager/template
+          - github.com/prometheus/client_golang/prometheus
+          - github.com/stakater/prometheus-msteams
+          - gopkg.in/yaml.v2
+          - k8s.io/helm/pkg/engine
+          - github.com/stretchr/testify
+          - github.com/onsi/ginkgo/v2
+          - github.com/onsi/gomega
+    errcheck:
+      # path to a file containing a list of functions to exclude from checking
+      # see https://github.com/kisielk/errcheck#excluding-functions for details
+      exclude-functions:
+        - (github.com/go-kit/kit/log.Logger).Log
+
+    #unused:
+    #  # treat code as a program (not a library) and report unused exported identifiers; default is false.
+    #  # XXX: if you enable this setting, unused will report a lot of false-positives in text editors:
+    #  # if it's called for subdir of a project it can't find funcs usages. All text editor integrations
+    #  # with golangci-lint call it on a directory with the changed file.
+    #  check-exported: false
+
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

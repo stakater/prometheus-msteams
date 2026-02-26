@@ -1,0 +1,119 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+
+env:
+  REGISTRY: ghcr.io/stakater
+  GHCR_USERNAME: stakater-user
+
+jobs:
+  test:
+    name: Run tests
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v5
+      with:
+        fetch-depth: 2
+
+    - uses: actions/setup-go@v6
+      with:
+        go-version-file: 'go.mod'
+
+    - name: Run tests
+      run: make test
+
+  build-binaries:
+    name: Build and Publish binaries
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    strategy:
+      matrix:
+        include:
+        - os: linux
+          arch: amd64
+        - os: linux
+          arch: arm
+        - os: linux
+          arch: arm64
+        - os: linux
+          arch: ppc64le
+        - os: linux
+          arch: s390x
+        - os: windows
+          arch: amd64
+        - os: windows
+          arch: arm64
+        - os: darwin
+          arch: amd64
+        - os: darwin
+          arch: arm64
+      fail-fast: false
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Build binary for ${{ matrix.os }}/${{ matrix.arch }}
+        run: make build
+        env:
+          CGO_ENABLED: 0
+          GOOS: ${{ matrix.os }}
+          GOARCH: ${{ matrix.arch }}
+
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: bin/${{ github.event.repository.name }}
+          asset_name: ${{ github.event.repository.name }}-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.os == 'windows' && '.exe' || '' }}
+          tag: ${{ github.ref_name }}
+
+  build-docker:
+    name: Build and Publish Docker images
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+      - name: Setup Docker
+        id: docker
+        uses: stakater/.github/.github/actions/operator/docker@main
+        env:
+          CONTAINER_REGISTRY_URL: ${{ env.REGISTRY }}
+          CONTAINER_REGISTRY_USERNAME: ${{ env.GHCR_USERNAME }}
+          CONTAINER_REGISTRY_PASSWORD: ${{ secrets.GHCR_TOKEN }}
+
+      - name: Build Docker image
+        run: make docker-buildx
+        env:
+          DOCKER_TAG_BASE: ${{ steps.docker.outputs.IMAGE_REPOSITORY }}
+          VERSION: ${{ github.event.release.tag_name }}
+          COMMIT: ${{ github.sha }}
+          BRANCH: ${{ github.ref_name }}
+
+      - name: Build Docker image
+        run: make docker-buildx
+        env:
+          DOCKER_TAG_BASE: ${{ steps.docker.outputs.IMAGE_REPOSITORY }}
+          VERSION: latest
+          COMMIT: ${{ github.sha }}
+          BRANCH: ${{ github.ref_name }}
+
+      #- name: Publish Docker image
+      #  run: make docker-publish

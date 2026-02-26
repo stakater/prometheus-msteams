@@ -1,0 +1,105 @@
+name: Check Coverage
+on:
+  push:
+    branches: 
+      - "main"
+  pull_request:
+
+env:
+  REGISTRY: ghcr.io/stakater
+  GHCR_USERNAME: stakater-user
+
+jobs:
+  golangci:
+    name: Run code linter
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v5
+        with:
+          submodules: recursive
+          persist-credentials: false # otherwise, the token used is the GITHUB_TOKEN, instead of your personal token
+          fetch-depth: 0 # otherwise, you will fail to push refs to dest repo
+          ref: ${{github.event.pull_request.head.sha}}
+
+      - name: Setup Docker
+        id: docker
+        uses: stakater/.github/.github/actions/operator/docker@main
+        env:
+          CONTAINER_REGISTRY_URL: ${{ env.REGISTRY }}
+          CONTAINER_REGISTRY_USERNAME: ${{ env.GHCR_USERNAME }}
+          CONTAINER_REGISTRY_PASSWORD: ${{ secrets.GHCR_TOKEN }}
+
+      #- name: Generate image tag
+      #  id: tag
+      #  uses: stakater/.github/.github/actions/operator/tag@main
+      #  env:
+      #    AUTO_GENERATED: true
+      #    TAGGING_STRATEGY: commit-sha
+
+      - name: Generate image tag
+        id: tag
+        run: |
+          sha=${{ github.event.pull_request.head.sha }}
+          tag="SNAPSHOT-PR-${{ github.event.pull_request.number }}-${sha:0:8}"
+          echo "TAG=$(echo ${tag})" >> $GITHUB_OUTPUT
+
+      - name: Build Docker image
+        run: make all test
+        env:
+          DOCKER_TAG_BASE: ${{ steps.docker.outputs.IMAGE_REPOSITORY }}
+          VERSION: ${{ steps.tag.outputs.TAG }}
+          COMMIT: ${{ github.sha }}
+          BRANCH: ${{ github.ref_name }}
+          DOCKER_BUILD_ARGS: --pull --push --cache-to type=inline
+
+      - name: Build Docker image
+        run: make docker-build
+        env:
+          DOCKER_TAG_BASE: ${{ steps.docker.outputs.IMAGE_REPOSITORY }}
+          VERSION: ${{ steps.tag.outputs.TAG }}
+          COMMIT: ${{ github.sha }}
+          BRANCH: ${{ github.ref_name }}
+          DOCKER_BUILD_ARGS: --pull --push --cache-to type=inline
+
+      - name: Comment on PR
+        uses: thollander/actions-comment-pull-request@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          comment-tag: ci-report
+          message: |-
+            @${{ github.actor }} Image is available for testing.
+            `docker pull ${{ steps.docker.outputs.IMAGE_REPOSITORY }}:${{ steps.tag.outputs.TAG }}`
+
+  code_coverage:
+    name: Check Code Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+            go-version-file: 'go.mod'
+
+      - name: Show Go Version
+        run: go version
+
+      - name: Show Go Version
+        run: make test-coverage
+        env:
+          TEST_COVERAGE_FILE: cover.out
+
+      - name: Check Code Coverage
+        id: coverage
+        uses: stakater/.github/.github/actions/operator/coverage@main
+        with:
+          TARGET_BRANCH: ${{ github.event.repository.default_branch }}
+          COVERAGE_CONFIG: ./.github/.testcoverage.yml
+          COVERAGE_PROFILE: cover.out
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

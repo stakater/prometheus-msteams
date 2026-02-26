@@ -1,0 +1,70 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+name: trivy
+
+on:
+  push:
+    branches:
+      - "main"
+  pull_request:
+    branches:
+      - "main"
+  schedule:
+    - cron: '25 12 * * 3'
+
+permissions:
+  contents: read
+
+env:
+  REGISTRY: ghcr.io/stakater
+  GHCR_USERNAME: stakater-user
+
+jobs:
+  build:
+    permissions:
+      contents: read # for actions/checkout to fetch code
+      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
+
+    name: Build
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Setup Docker
+        id: docker
+        uses: stakater/.github/.github/actions/operator/docker@main
+        env:
+          CONTAINER_REGISTRY_URL: ${{ env.REGISTRY }}
+          CONTAINER_REGISTRY_USERNAME: ${{ env.GHCR_USERNAME }}
+          CONTAINER_REGISTRY_PASSWORD: ${{ secrets.GHCR_TOKEN }}
+
+      - name: Build Docker image
+        run: make docker-build
+        env:
+          DOCKER_TAG_BASE: ${{ steps.docker.outputs.IMAGE_REPOSITORY }}
+          VERSION: scan-${{ github.sha }}
+          COMMIT: ${{ github.sha }}
+          BRANCH: ${{ github.ref_name }}
+          DOCKER_BUILD_ARGS: --load
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@0.34.1
+        with:
+          image-ref: '${{ steps.docker.outputs.IMAGE_REPOSITORY }}:scan-${{ github.sha }}'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: 'trivy-results.sarif'
