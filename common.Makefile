@@ -47,15 +47,14 @@ IMG ?= $(DOCKER_TAG_BASE):$(VERSION)
 # DOCKER_BUILD_ARGS ?= GIT_USER=${GIT_USER} GIT_TOKEN=${GIT_TOKEN}
 DOCKER_BUILD_ARGS ?= 
 
-DEFAULT_BUILD_ARGS := EXEC_FILE=$(PROJECT_NAME) \
-					VERSION=$(VERSION) \
+DEFAULT_BUILD_ARGS := VERSION=$(VERSION) \
 					COMMIT=$(COMMIT) \
 					BRANCH=$(BRANCH) \
 					BUILD_DATE=$(BUILD_DATE)
 
 # DOCKER_BUILD_ARG_FLAGS processes DOCKER_BUILD_ARGS and prepends --build-arg to each argument
-DOCKER_BUILD_ARG_FLAGS := $(foreach arg,$(DOCKER_BUILD_ARGS),--build-arg $(arg))$(foreach arg,$(DEFAULT_BUILD_ARGS),--build-arg $(arg))
-#DOCKER_BUILD_ARG_FLAGS = $(DEFAULT_BUILD_ARGS) $(DOCKER_BUILD_ARGS)
+DOCKER_BUILD_ARG_FLAGS := $(foreach arg,$(DEFAULT_BUILD_ARGS),--build-arg $(strip $(arg)))
+DOCKER_BUILD_ARG_FLAGS += $(foreach arg,$(DOCKER_BUILD_ARGS),$(strip $(arg)))
 
 # DOCKER_LOCAL_FILE allows you to specify a custom Dockerfile for local development,
 # which can be useful to speed up build times by using a simpler Dockerfile that doesn't
