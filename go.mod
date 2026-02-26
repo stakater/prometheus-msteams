@@ -6,7 +6,7 @@ require (
 	contrib.go.opencensus.io/exporter/jaeger v0.2.1
 	contrib.go.opencensus.io/exporter/prometheus v0.4.2
 	github.com/go-kit/kit v0.9.1-0.20191018122245-9f5354e50d79
-	github.com/hashicorp/go-retryablehttp v0.7.2
+	github.com/hashicorp/go-retryablehttp v0.7.8
 	github.com/labstack/echo/v4 v4.10.2
 	github.com/oklog/run v1.1.0
 	github.com/onsi/ginkgo/v2 v2.28.1
