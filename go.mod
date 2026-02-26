@@ -7,7 +7,7 @@ require (
 	contrib.go.opencensus.io/exporter/prometheus v0.4.2
 	github.com/go-kit/kit v0.9.1-0.20191018122245-9f5354e50d79
 	github.com/hashicorp/go-retryablehttp v0.7.2
-	github.com/labstack/echo/v4 v4.10.2
+	github.com/labstack/echo/v4 v4.15.1
 	github.com/oklog/run v1.1.0
 	github.com/onsi/ginkgo/v2 v2.28.1
 	github.com/onsi/gomega v1.39.1
@@ -62,8 +62,8 @@ require (
 	github.com/imdario/mergo v0.3.9 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/jpillora/backoff v1.0.0 // indirect
-	github.com/labstack/gommon v0.4.0 // indirect
-	github.com/mattn/go-colorable v0.1.13 // indirect
+	github.com/labstack/gommon v0.4.2 // indirect
+	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/miekg/dns v1.1.41 // indirect
