@@ -18,6 +18,13 @@ limitations under the License.
 // with Microsoft Adaptive Cards.
 package adaptivecards
 
+func init() {
+	// RegisterType("AdaptiveCardItem", AdaptiveCardItem{})
+	RegisterType("message", WorkflowConnectorCard{})
+}
+
+// region AdaptiveCardItem
+
 // AdaptiveCardItem represents a card for workflow.
 type AdaptiveCardItem struct {
 	ContentType string       `json:"contentType"` // Always "application/vnd.microsoft.card.adaptive"
@@ -25,8 +32,40 @@ type AdaptiveCardItem struct {
 	Content     AdaptiveCard `json:"content"`
 }
 
+/*
+// MarshalJSON ensures that the "type" field is included when marshaling a
+// AdaptiveCardItem to JSON.
+func (a AdaptiveCardItem) MarshalJSON() ([]byte, error) {
+	return SmartMarshalFromJSON(a)
+	// return marshalWithType(a, "Action.OpenUrl")
+}
+
+// UnmarshalJSON ensures we only unmarshal if the type is correct
+func (a *AdaptiveCardItem) UnmarshalJSON(data []byte) error {
+	return SmartUnmarshalJSON(data, a)
+}
+*/
+
+// endregion AdaptiveCardItem
+
+// region WorkflowConnectorCard
+
 // WorkflowConnectorCard represents a card for workflow.
 type WorkflowConnectorCard struct {
 	Type        string             `json:"type"`
 	Attachments []AdaptiveCardItem `json:"attachments"`
 }
+
+// MarshalJSON ensures that the "type" field is included when marshaling a
+// WorkflowConnectorCard to JSON.
+func (a WorkflowConnectorCard) MarshalJSON() ([]byte, error) {
+	return SmartMarshalFromJSON(a)
+	// return marshalWithType(a, "Action.OpenUrl")
+}
+
+// UnmarshalJSON ensures we only unmarshal if the type is correct
+func (a *WorkflowConnectorCard) UnmarshalJSON(data []byte) error {
+	return SmartUnmarshalJSON(data, a)
+}
+
+// endregion WorkflowConnectorCard

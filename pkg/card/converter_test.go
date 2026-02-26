@@ -72,14 +72,14 @@ func TestLoggingMiddleware_Convert_Success(t *testing.T) {
 		Data:     &template.Data{},
 	}
 
-	card, err := middleware.ConvertWorkflow(context.Background(), wm)
+	card, err := middleware.Convert(context.Background(), wm)
 
 	assert.NoError(t, err)
 	assert.Equal(t, "message", card.Type)
 	assert.Equal(t, 1, len(card.Attachments))
 }
 
-func TestLoggingMiddleware_ConvertWorkflow_WithManyActions(t *testing.T) {
+func TestLoggingMiddleware_Convert_WithManyActions(t *testing.T) {
 	logger := utility.NewLogger(utility.LogFormatFmt, false)
 
 	// Create a workflow card with more than 5 actions (should trigger warning)
@@ -116,13 +116,13 @@ func TestLoggingMiddleware_ConvertWorkflow_WithManyActions(t *testing.T) {
 		Data:     &template.Data{},
 	}
 
-	card, err := middleware.ConvertWorkflow(context.Background(), wm)
+	card, err := middleware.Convert(context.Background(), wm)
 
 	assert.NoError(t, err)
 	assert.Equal(t, 6, len(card.Attachments[0].Content.Actions))
 }
 
-func TestLoggingMiddleware_ConvertWorkflow_Error(t *testing.T) {
+func TestLoggingMiddleware_Convert_Error(t *testing.T) {
 	logger := utility.NewLogger(utility.LogFormatFmt, false)
 
 	mockConv := mockConverter{
@@ -137,13 +137,13 @@ func TestLoggingMiddleware_ConvertWorkflow_Error(t *testing.T) {
 		Data:     &template.Data{},
 	}
 
-	_, err := middleware.ConvertWorkflow(context.Background(), wm)
+	_, err := middleware.Convert(context.Background(), wm)
 
 	assert.Error(t, err)
 	assert.Equal(t, "workflow conversion error", err.Error())
 }
 
-func TestLoggingMiddleware_ConvertWorkflow_MultipleAttachments(t *testing.T) {
+func TestLoggingMiddleware_Convert_MultipleAttachments(t *testing.T) {
 	logger := utility.NewLogger(utility.LogFormatFmt, false)
 
 	mockConv := mockConverter{
@@ -189,7 +189,7 @@ func TestLoggingMiddleware_ConvertWorkflow_MultipleAttachments(t *testing.T) {
 		Data:     &template.Data{},
 	}
 
-	card, err := middleware.ConvertWorkflow(context.Background(), wm)
+	card, err := middleware.Convert(context.Background(), wm)
 
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(card.Attachments))

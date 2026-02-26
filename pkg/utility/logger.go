@@ -58,7 +58,7 @@ func NewLogger(format LoggerFormat, debug bool) *Logger {
 		}
 		l.log = logger
 		l.SetDebug(debug)
-		l.log = log.With(l.log, "ts", log.DefaultTimestamp, "caller", log.DefaultCaller)
+		l.log = log.With(l.log, "ts", log.DefaultTimestamp, "caller", log.Caller(4))
 	}
 	return l
 }
@@ -79,7 +79,22 @@ func (l *Logger) GetLogger() log.Logger {
 	return l.log
 }
 
-// With adds keyvals to the logger context and returns a new Logger.
+// WithPrefix returns a new contextual logger with keyvals prepended to those
+// passed to calls to Log. If logger is also a contextual logger created by
+// With or WithPrefix, keyvals is prepended to the existing context.
+//
+// The returned Logger replaces all value elements (odd indexes) containing a
+// Valuer with their generated value for each call to its Log method.
+func (l *Logger) WithPrefix(keyvals ...any) *Logger {
+	return &Logger{log: log.WithPrefix(l.log, keyvals...)}
+}
+
+// With returns a new contextual logger with keyvals prepended to those passed
+// to calls to Log. If logger is also a contextual logger created by With or
+// WithPrefix, keyvals is appended to the existing context.
+//
+// The returned Logger replaces all value elements (odd indexes) containing a
+// Valuer with their generated value for each call to its Log method.
 func (l *Logger) With(keyvals ...any) *Logger {
 	return &Logger{log: log.With(l.log, keyvals...)}
 }

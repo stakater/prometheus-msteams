@@ -136,6 +136,25 @@ func ValidateType(raw json.RawMessage, sourceType reflect.Type) error {
 
 // region Dynamic Marshaling
 
+// SmartMarshalFromJSON injects a "type" field into any struct during JSON marshaling.
+// It uses reflection to extract struct fields and build a map, avoiding the infinite
+// recursion that would occur if we called json.Marshal directly on the value.
+func SmartMarshalFromJSON(v any) ([]byte, error) {
+	sourceValue := reflect.ValueOf(v)
+	sourceType := sourceValue.Type()
+
+	if sourceValue.Kind() == reflect.Pointer {
+		sourceType = sourceType.Elem()
+	}
+
+	typeStr, ok := FindMapKey(typeRegistry, sourceType)
+	if !ok {
+		return nil, fmt.Errorf("unable to find type for %T in registry! Is it registered?", sourceType)
+	}
+
+	return marshalWithType(v, typeStr)
+}
+
 // marshalWithType injects a "type" field into any struct during JSON marshaling.
 // It uses reflection to extract struct fields and build a map, avoiding the infinite
 // recursion that would occur if we called json.Marshal directly on the value.
@@ -417,6 +436,7 @@ type interfaceUnmarshaler struct {
 }
 
 var sliceUnmarshalers = []interfaceUnmarshaler{
+	// Element
 	{
 		interfaceType: reflect.TypeFor[Element](),
 		unmarshal: func(raw []json.RawMessage) (reflect.Value, error) {
@@ -425,6 +445,7 @@ var sliceUnmarshalers = []interfaceUnmarshaler{
 			return reflect.ValueOf(elements), err
 		},
 	},
+	// Action
 	{
 		interfaceType: reflect.TypeFor[Action](),
 		unmarshal: func(raw []json.RawMessage) (reflect.Value, error) {
@@ -433,6 +454,7 @@ var sliceUnmarshalers = []interfaceUnmarshaler{
 			return reflect.ValueOf(actions), err
 		},
 	},
+	// ActionData
 	{
 		interfaceType: reflect.TypeFor[ActionData](),
 		unmarshal: func(raw []json.RawMessage) (reflect.Value, error) {
@@ -441,6 +463,7 @@ var sliceUnmarshalers = []interfaceUnmarshaler{
 			return reflect.ValueOf(actiondata), err
 		},
 	},
+	// Reference
 	{
 		interfaceType: reflect.TypeFor[Reference](),
 		unmarshal: func(raw []json.RawMessage) (reflect.Value, error) {
@@ -449,6 +472,7 @@ var sliceUnmarshalers = []interfaceUnmarshaler{
 			return reflect.ValueOf(references), err
 		},
 	},
+	// Layout
 	{
 		interfaceType: reflect.TypeFor[Layout](),
 		unmarshal: func(raw []json.RawMessage) (reflect.Value, error) {
@@ -457,6 +481,7 @@ var sliceUnmarshalers = []interfaceUnmarshaler{
 			return reflect.ValueOf(layouts), err
 		},
 	},
+	// RichTextInline
 	{
 		interfaceType: reflect.TypeFor[RichTextInline](),
 		unmarshal: func(raw []json.RawMessage) (reflect.Value, error) {
@@ -471,6 +496,7 @@ var singleUnmarshalers = []struct {
 	interfaceType reflect.Type
 	unmarshal     func(json.RawMessage) (reflect.Value, error)
 }{
+	// Element
 	{
 		interfaceType: reflect.TypeFor[Element](),
 		unmarshal: func(raw json.RawMessage) (reflect.Value, error) {
@@ -479,6 +505,7 @@ var singleUnmarshalers = []struct {
 			return reflect.ValueOf(element), err
 		},
 	},
+	// Action
 	{
 		interfaceType: reflect.TypeFor[Action](),
 		unmarshal: func(raw json.RawMessage) (reflect.Value, error) {
@@ -487,6 +514,16 @@ var singleUnmarshalers = []struct {
 			return reflect.ValueOf(action), err
 		},
 	},
+	// ActionData
+	{
+		interfaceType: reflect.TypeFor[ActionData](),
+		unmarshal: func(raw json.RawMessage) (reflect.Value, error) {
+			var action ActionData
+			err := unmarshalMessage(raw, &action)
+			return reflect.ValueOf(action), err
+		},
+	},
+	// Reference
 	{
 		interfaceType: reflect.TypeFor[Reference](),
 		unmarshal: func(raw json.RawMessage) (reflect.Value, error) {
@@ -495,6 +532,7 @@ var singleUnmarshalers = []struct {
 			return reflect.ValueOf(reference), err
 		},
 	},
+	// Layout
 	{
 		interfaceType: reflect.TypeFor[Layout](),
 		unmarshal: func(raw json.RawMessage) (reflect.Value, error) {
@@ -503,6 +541,7 @@ var singleUnmarshalers = []struct {
 			return reflect.ValueOf(layout), err
 		},
 	},
+	// RichTextInline
 	{
 		interfaceType: reflect.TypeFor[RichTextInline](),
 		unmarshal: func(raw json.RawMessage) (reflect.Value, error) {
@@ -553,6 +592,11 @@ func unmarshalSingleField(rawMessage json.RawMessage, fieldValue reflect.Value) 
 			value, err := unmarshaler.unmarshal(rawMessage)
 			if err != nil {
 				return err
+			}
+			// Check if the returned value is valid before setting
+			if !value.IsValid() {
+				// Unknown type was ignored, skip setting
+				return nil
 			}
 			fieldValue.Set(value)
 			return nil
@@ -625,6 +669,14 @@ func unmarshalSliceFieldFromRaw(rawData json.RawMessage, fieldValue reflect.Valu
 
 // unmarshalInterfaceFieldFromRaw unmarshals an interface field from raw JSON
 func unmarshalInterfaceFieldFromRaw(rawData json.RawMessage, fieldValue reflect.Value, fieldName string) error {
+	// Validate fieldValue before proceeding
+	if !fieldValue.IsValid() {
+		return fmt.Errorf("field %s has invalid reflect.Value", fieldName)
+	}
+	if !fieldValue.CanSet() {
+		return fmt.Errorf("field %s cannot be set", fieldName)
+	}
+
 	// Special case: Fallback field can be string, Element, or Action
 	if fieldName == "fallback" {
 		var fallbackValue any
@@ -691,6 +743,15 @@ func smartUnmarshalSingleField(rawFields map[string]json.RawMessage, targetType 
 	if !exists {
 		return nil
 	}
+
+	/*
+		logger.Debug(
+			"function", "smartUnmarshalSingleField",
+			"targetType", targetType.Name(),
+			"structField", structField.Name,
+			"fieldName", fieldName,
+			"fieldType", fieldValue.Type())
+	*/
 
 	// Dispatch to appropriate unmarshaler based on field kind
 	switch structField.Type.Kind() {

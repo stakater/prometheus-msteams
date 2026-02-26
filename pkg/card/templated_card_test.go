@@ -21,6 +21,7 @@ import (
 
 	"github.com/stakater/prometheus-msteams/pkg/adaptivecards"
 	"github.com/stakater/prometheus-msteams/pkg/testutils"
+	"github.com/stakater/prometheus-msteams/pkg/utility"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -165,7 +166,7 @@ func Test_templatedCard_Convert(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			m := NewTemplatedCardCreator(tmpl, tt.escapeUnderscores)
+			m := NewTemplatedCardCreator(tmpl, tt.escapeUnderscores, &utility.Logger{})
 
 			got, err := m.Convert(context.Background(), a)
 			if tt.wantErr {

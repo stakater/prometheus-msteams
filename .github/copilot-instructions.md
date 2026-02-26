@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-A lightweight Go Web Server that receives POST alert messages from Prometheus Alert Manager and sends it to a Microsoft Teams Channel using an incoming webhook url.
+A lightweight Go Web Server that receives POST alert messages from Prometheus Alert Manager and sends it to a Microsoft Teams Channel using an incoming webhook URL[s].
 The package provides a complete implementation of the Microsoft Adaptive Cards schema, supporting all versions from 1.0 to 1.6. It includes type definitions for all card elements, actions, and containers, along with JSON marshaling/unmarshaling and a robust version validation system.
 
 ## Package Structure
@@ -12,7 +12,7 @@ The package provides a complete implementation of the Microsoft Adaptive Cards s
   - **`adaptivecards`** - Implements the Adaptive Cards schema with version validation.
   - **`service`** - Defines the service structure.
   - **`testutils`** - Test utilities and helpers.
-  - **`transport`** - Transport layer for handling HTTP requests and responses.
+  - **`transport`** - Transport layer for handling HTTP[s] requests and responses.
   - **`version`** - Contains versioning information and utilities for the application.
 - **`test`** - Contains unit and integration tests for the application.
 

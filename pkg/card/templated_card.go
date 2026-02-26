@@ -30,24 +30,30 @@ import (
 	"github.com/prometheus/alertmanager/notify/webhook"
 	"github.com/prometheus/alertmanager/template"
 	"github.com/stakater/prometheus-msteams/pkg/adaptivecards"
+	"github.com/stakater/prometheus-msteams/pkg/utility"
 	"go.opencensus.io/trace"
 	"k8s.io/helm/pkg/engine"
 )
 
 // templatedCard implements Converter using Alert manager templating.
 type templatedCard struct {
+	logger   *utility.Logger
 	template *template.Template
 	// If true, replace all character `_` with `\\_` in the prometheus alert.
 	escapeUnderscores bool
 }
 
 // NewTemplatedCardCreator creates a templatedCard.
-func NewTemplatedCardCreator(template *template.Template, escapeUnderscores bool) Converter {
-	return &templatedCard{template, escapeUnderscores}
+func NewTemplatedCardCreator(template *template.Template, escapeUnderscores bool, logger *utility.Logger) Converter {
+	return &templatedCard{
+		logger:            logger.WithPrefix("package", "card", "component", "templatedCard"),
+		template:          template,
+		escapeUnderscores: escapeUnderscores,
+	}
 }
 
 func (m *templatedCard) Convert(ctx context.Context, promAlert webhook.Message) (adaptivecards.WorkflowConnectorCard, error) {
-	_, span := trace.StartSpan(ctx, "templatedCard.ConvertWorkflow")
+	_, span := trace.StartSpan(ctx, "templatedCard.Convert")
 	defer span.End()
 
 	cardString, err := m.executeTemplate(promAlert)

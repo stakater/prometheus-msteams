@@ -3,26 +3,33 @@ name: Release Charts
 on:
   push:
     branches:
-      - master
+      - main
 
 jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
+    - name: Checkout repository
+      uses: actions/checkout@v5
+      with:
+        fetch-depth: 2
 
-      - name: Configure Git
-        run: |
-          git config user.name "$GITHUB_ACTOR"
-          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
-
-      - name: Run chart-releaser
-        uses: helm/chart-releaser-action@v1.7.0
-        with:
-          charts_dir: chart
-        env:
-          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          CR_SKIP_EXISTING: true
+    - name: Publish Helm Chart
+      uses: stakater/.github/.github/actions/operator/chart-push@main
+      with:
+        VERSION: ${{ github.ref_name }}
+        TAG: ${{ github.ref_name }}
+        HELM_REGISTRY: "${{ secrets.CONTAINER_REGISTRY_URL }}/charts"
+        CONTAINER_REGISTRY_URL: ${{ secrets.CONTAINER_REGISTRY_URL }}
+      env:
+        ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+        GHCR_USERNAME: ${{ secrets.CONTAINER_REGISTRY_USERNAME }}
+        GHCR_TOKEN: ${{ secrets.CONTAINER_REGISTRY_PASSWORD }}
+    
+    - name: Publish Public Helm Chart
+      uses: stakater/.github/.github/actions/operator/chart-push@main
+      with:
+        VERSION: ${{ github.ref_name }}
+        TAG: ${{ github.ref_name }}
+        HELM_REGISTRY: "${{ secrets.CONTAINER_REGISTRY_URL }}/public/charts"
+        CONTAINER_REGISTRY_URL: ${{ secrets.CONTAINER_REGISTRY_URL }}/public

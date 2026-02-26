@@ -42,6 +42,14 @@ func compareCardJSON(t *testing.T, expected AdaptiveCard, expectedFile string) {
 
 	errors := card.Validate()
 	assert.Empty(t, errors)
+
+	expectedBytes, err := json.Marshal(expected)
+	require.NoError(t, err)
+
+	actualBytes, err := json.Marshal(card)
+	require.NoError(t, err)
+
+	assert.Equal(t, string(expectedBytes), string(actualBytes))
 }
 
 func TestAdaptiveCardExample(t *testing.T) {

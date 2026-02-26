@@ -427,7 +427,7 @@ func setupConverter(cfg Config, logger *utility.Logger) (card.Converter, error) 
 	if err != nil {
 		return nil, err
 	}
-	converter := card.NewTemplatedCardCreator(tmpl, cfg.EscapeUnderscores)
+	converter := card.NewTemplatedCardCreator(tmpl, cfg.EscapeUnderscores, logger)
 	converter = card.NewCreatorLoggingMiddleware(
 		logger.With(
 			"template_file", cfg.TemplateFile,
@@ -564,7 +564,7 @@ func connectorsFromTemplate(tc PromTeamsConfig, cfg Config, logger *utility.Logg
 			return nil, err
 		}
 
-		converter := card.NewTemplatedCardCreator(tmpl, c.EscapeUnderscores)
+		converter := card.NewTemplatedCardCreator(tmpl, c.EscapeUnderscores, logger)
 		converter = card.NewCreatorLoggingMiddleware(
 			logger.With(
 				"template_file", c.TemplateFile,

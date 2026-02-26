@@ -23,6 +23,8 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+
+	"github.com/stakater/prometheus-msteams/pkg/utility"
 )
 
 const (
@@ -32,6 +34,8 @@ const (
 	// DefaultSchema is the default schema URL for Adaptive Cards.
 	DefaultSchema = "https://adaptivecards.io/schemas/adaptive-card.json"
 )
+
+var logger *utility.Logger
 
 // init registers all known Element and Action types for dynamic unmarshaling
 func init() {
@@ -72,8 +76,8 @@ func init() {
 	// Register all Action types
 	RegisterType("Action.Execute", ActionExecute{})
 	RegisterType("Action.InsertImage", ActionInsertImage{})
-	RegisterType("Action.OpenURL", ActionOpenURL{})
-	RegisterType("Action.OpenURLDialog", ActionOpenURLDialog{})
+	RegisterType("Action.OpenUrl", ActionOpenURL{})
+	RegisterType("Action.OpenUrlDialog", ActionOpenURLDialog{})
 	RegisterType("Action.Popover", ActionPopover{})
 	RegisterType("Action.ResetInputs", ActionResetInputs{})
 	RegisterType("Action.RunCommands", ActionRunCommands{})
@@ -95,6 +99,11 @@ func init() {
 	RegisterType("Layout.Stack", LayoutStack{})
 	RegisterType("Layout.Flow", LayoutFlow{})
 	RegisterType("Layout.AreaGrid", LayoutAreaGrid{})
+	RegisterType("StringResource", StringResource{})
+
+	if logger == nil {
+		logger = utility.NewLogger(utility.LogFormatJSON, true)
+	}
 }
 
 // AsPtr is a helper function that takes a value of any type and returns a
@@ -174,7 +183,8 @@ type AdaptiveCard struct {
 
 // MarshalJSON automatically injects "type": "AdaptiveCard"
 func (a AdaptiveCard) MarshalJSON() ([]byte, error) {
-	return marshalWithType(a, "AdaptiveCard")
+	return SmartMarshalFromJSON(a)
+	// return marshalWithType(a, "AdaptiveCard")
 }
 
 // UnmarshalJSON ensures we only unmarshal if the type is correct
@@ -220,7 +230,8 @@ func (c AdaptiveCardReference) isReference() {}
 // MarshalJSON ensures that the "type" field is included when marshaling an
 // AdaptiveCardReference to JSON.
 func (c AdaptiveCardReference) MarshalJSON() ([]byte, error) {
-	return marshalWithType(c, "AdaptiveCardReference")
+	return SmartMarshalFromJSON(c)
+	// return marshalWithType(c, "AdaptiveCardReference")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -249,7 +260,8 @@ func (c DocumentReference) isReference() {}
 // MarshalJSON ensures that the "type" field is included when marshaling a
 // DocumentReference to JSON.
 func (c DocumentReference) MarshalJSON() ([]byte, error) {
-	return marshalWithType(c, "DocumentReference")
+	return SmartMarshalFromJSON(c)
+	// return marshalWithType(c, "DocumentReference")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -282,7 +294,8 @@ func (a ActionSet) isElement() {}
 // MarshalJSON ensures that the "type" field is included when marshaling an
 // ActionSet to JSON.
 func (a ActionSet) MarshalJSON() ([]byte, error) {
-	return marshalWithType(a, "ActionSet")
+	return SmartMarshalFromJSON(a)
+	// return marshalWithType(a, "ActionSet")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -312,7 +325,8 @@ func (c Badge) isElement() {}
 
 // MarshalJSON ensures that the "type" field is included when marshaling a Badge to JSON.
 func (c Badge) MarshalJSON() ([]byte, error) {
-	return marshalWithType(c, "Badge")
+	return SmartMarshalFromJSON(c)
+	// return marshalWithType(c, "Badge")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling JSON into a Badge struct.
@@ -336,7 +350,8 @@ func (c CodeBlock) isElement() {}
 
 // MarshalJSON ensures that the "type" field is included when marshaling a CodeBlock to JSON.
 func (c CodeBlock) MarshalJSON() ([]byte, error) {
-	return marshalWithType(c, "CodeBlock")
+	return SmartMarshalFromJSON(c)
+	// return marshalWithType(c, "CodeBlock")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling JSON into a CodeBlock struct.
@@ -365,7 +380,8 @@ func (c ColumnSet) isElement() {}
 // MarshalJSON ensures that the "type" field is included when marshaling a
 // ColumnSet to JSON.
 func (c ColumnSet) MarshalJSON() ([]byte, error) {
-	return marshalWithType(c, "ColumnSet")
+	return SmartMarshalFromJSON(c)
+	// return marshalWithType(c, "ColumnSet")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -399,7 +415,8 @@ func (c Column) isElement() {}
 // MarshalJSON ensures that the "type" field is included when marshaling a
 // Column to JSON.
 func (c Column) MarshalJSON() ([]byte, error) {
-	return marshalWithType(c, "Column")
+	return SmartMarshalFromJSON(c)
+	// return marshalWithType(c, "Column")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -430,7 +447,8 @@ func (c CompoundButton) isElement() {}
 // MarshalJSON ensures that the "type" field is included when marshaling a
 // CompoundButton to JSON.
 func (c CompoundButton) MarshalJSON() ([]byte, error) {
-	return marshalWithType(c, "CompoundButton")
+	return SmartMarshalFromJSON(c)
+	// return marshalWithType(c, "CompoundButton")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -465,7 +483,8 @@ func (c Container) isElement() {}
 // MarshalJSON ensures that the "type" field is included when marshaling a
 // Container to JSON.
 func (c Container) MarshalJSON() ([]byte, error) {
-	return marshalWithType(c, "Container")
+	return SmartMarshalFromJSON(c)
+	// return marshalWithType(c, "Container")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -489,7 +508,8 @@ func (f FactSet) isElement() {}
 // MarshalJSON ensures that the "type" field is included when marshaling a
 // FactSet to JSON.
 func (f FactSet) MarshalJSON() ([]byte, error) {
-	return marshalWithType(f, "FactSet")
+	return SmartMarshalFromJSON(f)
+	// return marshalWithType(f, "FactSet")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -543,7 +563,8 @@ func (i Icon) isElement() {}
 // MarshalJSON ensures that the "type" field is included when marshaling an
 // Icon to JSON.
 func (i Icon) MarshalJSON() ([]byte, error) {
-	return marshalWithType(i, "Icon")
+	return SmartMarshalFromJSON(i)
+	// return marshalWithType(i, "Icon")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -579,7 +600,8 @@ func (i Image) isElement() {}
 // MarshalJSON ensures that the "type" field is included when marshaling an
 // Image to JSON.
 func (i Image) MarshalJSON() ([]byte, error) {
-	return marshalWithType(i, "Image")
+	return SmartMarshalFromJSON(i)
+	// return marshalWithType(i, "Image")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -615,7 +637,8 @@ func (i ImageSet) isElement() {}
 // MarshalJSON ensures that the "type" field is included when marshaling an
 // ImageSet to JSON.
 func (i ImageSet) MarshalJSON() ([]byte, error) {
-	return marshalWithType(i, "ImageSet")
+	return SmartMarshalFromJSON(i)
+	// return marshalWithType(i, "ImageSet")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -642,7 +665,8 @@ func (m Media) isElement() {}
 // MarshalJSON ensures that the "type" field is included when marshaling a
 // Media to JSON.
 func (m Media) MarshalJSON() ([]byte, error) {
-	return marshalWithType(m, "Media")
+	return SmartMarshalFromJSON(m)
+	// return marshalWithType(m, "Media")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -663,7 +687,8 @@ type CaptionSource struct {
 // MarshalJSON ensures that the "type" field is included when marshaling a
 // CaptionSource to JSON.
 func (c CaptionSource) MarshalJSON() ([]byte, error) {
-	return marshalWithType(c, "CaptionSource")
+	return SmartMarshalFromJSON(c)
+	// return marshalWithType(c, "CaptionSource")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -685,7 +710,8 @@ type MediaSource struct {
 // MarshalJSON ensures that the "type" field is included when marshaling a
 // MediaSource to JSON.
 func (m MediaSource) MarshalJSON() ([]byte, error) {
-	return marshalWithType(m, "MediaSource")
+	return SmartMarshalFromJSON(m)
+	// return marshalWithType(m, "MediaSource")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -714,7 +740,8 @@ func (c ProgressBar) isElement() {}
 // MarshalJSON ensures that the "type" field is included when marshaling a
 // ProgressBar to JSON.
 func (c ProgressBar) MarshalJSON() ([]byte, error) {
-	return marshalWithType(c, "ProgressBar")
+	return SmartMarshalFromJSON(c)
+	// return marshalWithType(c, "ProgressBar")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -742,7 +769,8 @@ func (c ProgressRing) isElement() {}
 // MarshalJSON ensures that the "type" field is included when marshaling a
 // ProgressRing to JSON.
 func (c ProgressRing) MarshalJSON() ([]byte, error) {
-	return marshalWithType(c, "ProgressRing")
+	return SmartMarshalFromJSON(c)
+	// return marshalWithType(c, "ProgressRing")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -772,7 +800,8 @@ func (c Rating) isElement() {}
 // MarshalJSON ensures that the "type" field is included when marshaling a
 // Rating to JSON.
 func (c Rating) MarshalJSON() ([]byte, error) {
-	return marshalWithType(c, "Rating")
+	return SmartMarshalFromJSON(c)
+	// return marshalWithType(c, "Rating")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -803,7 +832,8 @@ func (r RichTextBlock) isElement() {}
 // MarshalJSON ensures that the "type" field is included when marshaling a
 // RichTextBlock to JSON.
 func (r RichTextBlock) MarshalJSON() ([]byte, error) {
-	return marshalWithType(r, "RichTextBlock")
+	return SmartMarshalFromJSON(r)
+	// return marshalWithType(r, "RichTextBlock")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -836,7 +866,8 @@ func (t TextRun) isRichTextInline() {}
 // MarshalJSON ensures that the "type" field is included when marshaling a
 // TextRun to JSON.
 func (t TextRun) MarshalJSON() ([]byte, error) {
-	return marshalWithType(t, "TextRun")
+	return SmartMarshalFromJSON(t)
+	// return marshalWithType(t, "TextRun")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -867,7 +898,8 @@ func (c CitationRun) isRichTextInline() {}
 // MarshalJSON ensures that the "type" field is included when marshaling a
 // CitationRun to JSON.
 func (c CitationRun) MarshalJSON() ([]byte, error) {
-	return marshalWithType(c, "CitationRun")
+	return SmartMarshalFromJSON(c)
+	// return marshalWithType(c, "CitationRun")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -900,7 +932,8 @@ func (i IconRun) isRichTextInline() {}
 // MarshalJSON ensures that the "type" field is included when marshaling an
 // IconRun to JSON.
 func (i IconRun) MarshalJSON() ([]byte, error) {
-	return marshalWithType(i, "IconRun")
+	return SmartMarshalFromJSON(i)
+	// return marshalWithType(i, "IconRun")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -935,7 +968,8 @@ func (i ImageRun) isRichTextInline() {}
 // MarshalJSON ensures that the "type" field is included when marshaling an
 // ImageRun to JSON.
 func (i ImageRun) MarshalJSON() ([]byte, error) {
-	return marshalWithType(i, "ImageRun")
+	return SmartMarshalFromJSON(i)
+	// return marshalWithType(i, "ImageRun")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -971,7 +1005,8 @@ func (t Table) isElement() {}
 // MarshalJSON ensures that the "type" field is included when marshaling a
 // Table to JSON.
 func (t Table) MarshalJSON() ([]byte, error) {
-	return marshalWithType(t, "Table")
+	return SmartMarshalFromJSON(t)
+	// return marshalWithType(t, "Table")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -993,7 +1028,8 @@ type TableColumnDefinition struct {
 // MarshalJSON ensures that the "type" field is included when marshaling a
 // TableColumnDefinition to JSON.
 func (t TableColumnDefinition) MarshalJSON() ([]byte, error) {
-	return marshalWithType(t, "TableColumnDefinition")
+	return SmartMarshalFromJSON(t)
+	// return marshalWithType(t, "TableColumnDefinition")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -1020,7 +1056,8 @@ type TableRow struct {
 // MarshalJSON ensures that the "type" field is included when marshaling a
 // TableRow to JSON.
 func (t TableRow) MarshalJSON() ([]byte, error) {
-	return marshalWithType(t, "TableRow")
+	return SmartMarshalFromJSON(t)
+	// return marshalWithType(t, "TableRow")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -1051,7 +1088,8 @@ type TableCell struct {
 // MarshalJSON ensures that the "type" field is included when marshaling a
 // TableCell to JSON.
 func (t TableCell) MarshalJSON() ([]byte, error) {
-	return marshalWithType(t, "TableCell")
+	return SmartMarshalFromJSON(t)
+	// return marshalWithType(t, "TableCell")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -1086,7 +1124,8 @@ func (t TextBlock) isElement() {}
 
 // MarshalJSON automatically injects "type": "TextBlock"
 func (t TextBlock) MarshalJSON() ([]byte, error) {
-	return marshalWithType(t, "TextBlock")
+	return SmartMarshalFromJSON(t)
+	// return marshalWithType(t, "TextBlock")
 }
 
 // UnmarshalJSON ensures we only unmarshal if the type is correct
@@ -1122,7 +1161,8 @@ func (a ActionExecute) isAction() {}
 // MarshalJSON ensures that the "type" field is included when marshaling an
 // ActionExecute to JSON.
 func (a ActionExecute) MarshalJSON() ([]byte, error) {
-	return marshalWithType(a, "Action.Execute")
+	return SmartMarshalFromJSON(a)
+	// return marshalWithType(a, "Action.Execute")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -1148,7 +1188,8 @@ func (a ActionInsertImage) isAction() {}
 // MarshalJSON ensures that the "type" field is included when marshaling an
 // ActionInsertImage to JSON.
 func (a ActionInsertImage) MarshalJSON() ([]byte, error) {
-	return marshalWithType(a, "Action.InsertImage")
+	return SmartMarshalFromJSON(a)
+	// return marshalWithType(a, "Action.InsertImage")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -1172,7 +1213,8 @@ func (a ActionOpenURL) isAction() {}
 // MarshalJSON ensures that the "type" field is included when marshaling an
 // ActionOpenURL to JSON.
 func (a ActionOpenURL) MarshalJSON() ([]byte, error) {
-	return marshalWithType(a, "Action.OpenUrl")
+	return SmartMarshalFromJSON(a)
+	// return marshalWithType(a, "Action.OpenUrl")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -1199,7 +1241,8 @@ func (a ActionOpenURLDialog) isAction() {}
 // MarshalJSON ensures that the "type" field is included when marshaling an
 // ActionOpenURLDialog to JSON.
 func (a ActionOpenURLDialog) MarshalJSON() ([]byte, error) {
-	return marshalWithType(a, "Action.OpenUrlDialog")
+	return SmartMarshalFromJSON(a)
+	// return marshalWithType(a, "Action.OpenUrlDialog")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -1227,7 +1270,8 @@ func (a ActionPopover) isAction() {}
 // MarshalJSON ensures that the "type" field is included when marshaling an
 // ActionPopover to JSON.
 func (a ActionPopover) MarshalJSON() ([]byte, error) {
-	return marshalWithType(a, "Action.Popover")
+	return SmartMarshalFromJSON(a)
+	// return marshalWithType(a, "Action.Popover")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -1251,7 +1295,8 @@ func (a ActionResetInputs) isAction() {}
 // MarshalJSON ensures that the "type" field is included when marshaling an
 // ActionResetInputs to JSON.
 func (a ActionResetInputs) MarshalJSON() ([]byte, error) {
-	return marshalWithType(a, "Action.ResetInputs")
+	return SmartMarshalFromJSON(a)
+	// return marshalWithType(a, "Action.ResetInputs")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -1276,7 +1321,8 @@ func (a ActionRunCommands) isAction() {}
 // MarshalJSON ensures that the "type" field is included when marshaling an
 // ActionRunCommands to JSON.
 func (a ActionRunCommands) MarshalJSON() ([]byte, error) {
-	return marshalWithType(a, "Action.RunCommands")
+	return SmartMarshalFromJSON(a)
+	// return marshalWithType(a, "Action.RunCommands")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -1300,7 +1346,8 @@ func (a ActionShowCard) isAction() {}
 // MarshalJSON ensures that the "type" field is included when marshaling an
 // ActionShowCard to JSON.
 func (a ActionShowCard) MarshalJSON() ([]byte, error) {
-	return marshalWithType(a, "Action.ShowCard")
+	return SmartMarshalFromJSON(a)
+	// return marshalWithType(a, "Action.ShowCard")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -1327,7 +1374,8 @@ func (a ActionSubmit) isAction() {}
 // MarshalJSON ensures that the "type" field is included when marshaling an
 // ActionSubmit to JSON.
 func (a ActionSubmit) MarshalJSON() ([]byte, error) {
-	return marshalWithType(a, "Action.Submit")
+	return SmartMarshalFromJSON(a)
+	// return marshalWithType(a, "Action.Submit")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -1351,7 +1399,8 @@ func (a ActionToggleVisibility) isAction() {}
 // MarshalJSON ensures that the "type" field is included when marshaling an
 // ActionToggleVisibility to JSON.
 func (a ActionToggleVisibility) MarshalJSON() ([]byte, error) {
-	return marshalWithType(a, "Action.ToggleVisibility")
+	return SmartMarshalFromJSON(a)
+	// return marshalWithType(a, "Action.ToggleVisibility")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -1378,7 +1427,8 @@ func (t TargetElement) MarshalJSON() ([]byte, error) {
 		return json.Marshal(t.ElementID)
 	}
 
-	return marshalWithType(t, "TargetElement")
+	return SmartMarshalFromJSON(t)
+	// return marshalWithType(t, "TargetElement")
 }
 
 // UnmarshalJSON allows TargetElement to be unmarshaled from either a simple string
@@ -1417,7 +1467,8 @@ type ImBackSubmitActionData struct {
 // MarshalJSON ensures that the "type" field is included when marshaling an
 // ImBackSubmitActionData to JSON.
 func (a ImBackSubmitActionData) MarshalJSON() ([]byte, error) {
-	return marshalWithType(a, "imBack")
+	return SmartMarshalFromJSON(a)
+	// return marshalWithType(a, "imBack")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -1448,7 +1499,8 @@ type MessageBackSubmitActionData struct {
 // MarshalJSON ensures that the "type" field is included when marshaling an
 // MessageBackSubmitActionData to JSON.
 func (a MessageBackSubmitActionData) MarshalJSON() ([]byte, error) {
-	return marshalWithType(a, "messageBack")
+	return SmartMarshalFromJSON(a)
+	// return marshalWithType(a, "messageBack")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -1471,7 +1523,8 @@ type InvokeSubmitActionData struct {
 // MarshalJSON ensures that the "type" field is included when marshaling an
 // InvokeSubmitActionData to JSON.
 func (a InvokeSubmitActionData) MarshalJSON() ([]byte, error) {
-	return marshalWithType(a, "invoke")
+	return SmartMarshalFromJSON(a)
+	// return marshalWithType(a, "invoke")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -1516,7 +1569,8 @@ type SigninSubmitActionData struct {
 // MarshalJSON ensures that the "type" field is included when marshaling an
 // SigninSubmitActionData to JSON.
 func (a SigninSubmitActionData) MarshalJSON() ([]byte, error) {
-	return marshalWithType(a, "signin")
+	return SmartMarshalFromJSON(a)
+	// return marshalWithType(a, "signin")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -1568,7 +1622,8 @@ func (i InputChoiceSet) isElement() {}
 // MarshalJSON ensures that the "type" field is included when marshaling an
 // InputChoiceSet to JSON.
 func (i InputChoiceSet) MarshalJSON() ([]byte, error) {
-	return marshalWithType(i, "Input.ChoiceSet")
+	return SmartMarshalFromJSON(i)
+	// return marshalWithType(i, "Input.ChoiceSet")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -1588,7 +1643,8 @@ type InputChoice struct {
 // MarshalJSON ensures that the "type" field is included when marshaling an
 // InputChoice to JSON.
 func (i InputChoice) MarshalJSON() ([]byte, error) {
-	return marshalWithType(i, "Input.Choice")
+	return SmartMarshalFromJSON(i)
+	// return marshalWithType(i, "Input.Choice")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -1611,7 +1667,8 @@ type DataQuery struct {
 // MarshalJSON ensures that the "type" field is included when marshaling a
 // DataQuery to JSON.
 func (d DataQuery) MarshalJSON() ([]byte, error) {
-	return marshalWithType(d, "Data.Query")
+	return SmartMarshalFromJSON(d)
+	// return marshalWithType(d, "Data.Query")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -1646,7 +1703,8 @@ func (i InputDate) isElement() {}
 // MarshalJSON ensures that the "type" field is included when marshaling an
 // InputDate to JSON.
 func (i InputDate) MarshalJSON() ([]byte, error) {
-	return marshalWithType(i, "Input.Date")
+	return SmartMarshalFromJSON(i)
+	// return marshalWithType(i, "Input.Date")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -1679,7 +1737,8 @@ func (i InputNumber) isElement() {}
 // MarshalJSON ensures that the "type" field is included when marshaling an
 // InputNumber to JSON.
 func (i InputNumber) MarshalJSON() ([]byte, error) {
-	return marshalWithType(i, "Input.Number")
+	return SmartMarshalFromJSON(i)
+	// return marshalWithType(i, "Input.Number")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -1712,7 +1771,8 @@ type InputRating struct {
 // MarshalJSON ensures that the "type" field is included when marshaling an
 // InputRating to JSON.
 func (i InputRating) MarshalJSON() ([]byte, error) {
-	return marshalWithType(i, "Input.Rating")
+	return SmartMarshalFromJSON(i)
+	// return marshalWithType(i, "Input.Rating")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -1748,7 +1808,8 @@ func (i InputText) isElement() {}
 // MarshalJSON ensures that the "type" field is included when marshaling an
 // InputText to JSON.
 func (i InputText) MarshalJSON() ([]byte, error) {
-	return marshalWithType(i, "Input.Text")
+	return SmartMarshalFromJSON(i)
+	// return marshalWithType(i, "Input.Text")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -1781,7 +1842,8 @@ func (i InputTime) isElement() {}
 // MarshalJSON ensures that the "type" field is included when marshaling an
 // InputTime to JSON.
 func (i InputTime) MarshalJSON() ([]byte, error) {
-	return marshalWithType(i, "Input.Time")
+	return SmartMarshalFromJSON(i)
+	// return marshalWithType(i, "Input.Time")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -1817,7 +1879,8 @@ func (i InputToggle) isElement() {}
 // MarshalJSON ensures that the "type" field is included when marshaling an
 // InputToggle to JSON.
 func (i InputToggle) MarshalJSON() ([]byte, error) {
-	return marshalWithType(i, "Input.Toggle")
+	return SmartMarshalFromJSON(i)
+	// return marshalWithType(i, "Input.Toggle")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -1842,18 +1905,6 @@ type BackgroundImage struct {
 	VerticalAlignment   *VerticalAlignment   `json:"verticalAlignment,omitempty"`
 }
 
-// MarshalJSON ensures that the "type" field is included when marshaling a
-// BackgroundImage to JSON.
-func (b BackgroundImage) MarshalJSON() ([]byte, error) {
-	return marshalWithType(b, "BackgroundImage")
-}
-
-// UnmarshalJSON ensures that the "type" field is validated when unmarshaling
-// JSON into a BackgroundImage struct.
-func (b *BackgroundImage) UnmarshalJSON(data []byte) error {
-	return SmartUnmarshalJSON(data, b)
-}
-
 // endregion BackgroundImage
 
 // region RefreshDefinition
@@ -1868,7 +1919,8 @@ type Refresh struct {
 // MarshalJSON ensures that the "type" field is included when marshaling a
 // Refresh to JSON.
 func (r Refresh) MarshalJSON() ([]byte, error) {
-	return marshalWithType(r, "Refresh")
+	return SmartMarshalFromJSON(r)
+	// return marshalWithType(r, "Refresh")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -1904,7 +1956,8 @@ type TokenExchangeResource struct {
 // MarshalJSON ensures that the "type" field is included when marshaling a
 // TokenExchangeResource to JSON.
 func (t TokenExchangeResource) MarshalJSON() ([]byte, error) {
-	return marshalWithType(t, "TokenExchangeResource")
+	return SmartMarshalFromJSON(t)
+	// return marshalWithType(t, "TokenExchangeResource")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -1928,7 +1981,8 @@ type Authentication struct {
 // MarshalJSON ensures that the "type" field is included when marshaling an
 // Authentication to JSON.
 func (a Authentication) MarshalJSON() ([]byte, error) {
-	return marshalWithType(a, "Authentication")
+	return SmartMarshalFromJSON(a)
+	// return marshalWithType(a, "Authentication")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -1949,7 +2003,8 @@ type Metadata struct {
 // MarshalJSON ensures that the "type" field is included when marshaling
 // Metadata to JSON.
 func (m Metadata) MarshalJSON() ([]byte, error) {
-	return marshalWithType(m, "Metadata")
+	return SmartMarshalFromJSON(m)
+	// return marshalWithType(m, "Metadata")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -1969,19 +2024,6 @@ type StringResource struct {
 	DefaultValue    string            `json:"defaultValue,omitempty" version:"1.5"`
 	LocalizedValues map[string]string `json:"localizedValues,omitempty" version:"1.5"`
 	Key             string            `json:"key,omitempty"`
-}
-
-// MarshalJSON marshals localizedValues as a map (Go native format)
-func (s StringResource) MarshalJSON() ([]byte, error) {
-	return marshalWithType(s, "StringResource")
-}
-
-// UnmarshalJSON handles unmarshaling localizedValues as a dictionary (map[string]string)
-// where the key is the locale and the value is the localized string.
-func (s *StringResource) UnmarshalJSON(data []byte) error {
-	// type Alias StringResource
-	// return json.Unmarshal(data, (*Alias)(s))
-	return SmartUnmarshalJSON(data, s)
 }
 
 // endregion StringResource
@@ -2022,7 +2064,8 @@ type Mention struct {
 // MarshalJSON ensures that the "type" field is included when marshaling a
 // Mention to JSON.
 func (c Mention) MarshalJSON() ([]byte, error) {
-	return marshalWithType(c, "mention")
+	return SmartMarshalFromJSON(c)
+	// return marshalWithType(c, "mention")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -2086,7 +2129,8 @@ func (c LayoutStack) isLayout() {}
 // MarshalJSON ensures that the "type" field is included when marshaling a
 // LayoutStack to JSON.
 func (c LayoutStack) MarshalJSON() ([]byte, error) {
-	return marshalWithType(c, "LayoutStack")
+	return SmartMarshalFromJSON(c)
+	// return marshalWithType(c, "LayoutStack")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -2118,7 +2162,8 @@ func (c LayoutFlow) isLayout() {}
 // MarshalJSON ensures that the "type" field is included when marshaling a
 // LayoutFlow to JSON.
 func (c LayoutFlow) MarshalJSON() ([]byte, error) {
-	return marshalWithType(c, "LayoutFlow")
+	return SmartMarshalFromJSON(c)
+	// return marshalWithType(c, "LayoutFlow")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling
@@ -2209,7 +2254,8 @@ func (c LayoutAreaGrid) isLayout() {}
 // MarshalJSON ensures that the "type" field is included when marshaling a
 // LayoutAreaGrid to JSON.
 func (c LayoutAreaGrid) MarshalJSON() ([]byte, error) {
-	return marshalWithType(c, "LayoutAreaGrid")
+	return SmartMarshalFromJSON(c)
+	// return marshalWithType(c, "LayoutAreaGrid")
 }
 
 // UnmarshalJSON ensures that the "type" field is validated when unmarshaling

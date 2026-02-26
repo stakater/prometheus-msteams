@@ -1,14 +1,20 @@
 MAIN                 ?= main.go
-BINDIR                = bin
 GO                    = go
 ALL_PKGS             := ./...
 LOCALBIN             ?= $(shell pwd)/bin
+BINDIR               ?= $(LOCALBIN)
 
 MAIN_MODULE          := $(shell go list -m)
 VERSION_PKG          ?= $(MAIN_MODULE)/pkg/version
 
 GITHUB_ORGANIZATION  ?= $(shell echo $(MAIN_MODULE) | cut -d "/" -f2)
 PROJECT_NAME         ?= $(shell echo $(MAIN_MODULE) | cut -d "/" -f3)
+
+
+VERSION   ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "v0.0.0")
+COMMIT     ?= $(strip $(shell git rev-parse --short HEAD 2>&1 || echo "dev"))
+BRANCH     ?= $(strip $(shell git symbolic-ref --short HEAD 2>/dev/null || git rev-parse --short HEAD 2>/dev/null || echo "detached"))
+BUILD_DATE = $(shell date +%FT%T%z)
 
 # DOCKER_REPO_HOST defines the host of the docker registry to which images will be pushed.
 DOCKER_REPO_HOST ?= ghcr.io
@@ -31,28 +37,25 @@ DOCKER_REPO_NAME ?= $(PROJECT_NAME)
 DOCKER_TAG_BASE ?= $(DOCKER_REPO_BASE)/$(DOCKER_REPO_NAME)
 
 # Image URL to use all building/pushing image targets
-IMG ?= $(DOCKER_TAG_BASE):$(VERSION)$(GIT_TAG)
+IMG ?= $(DOCKER_TAG_BASE):$(VERSION)
 
 # DOCKER_BUILD_ARGS allows you to set custom build arguments for the docker build command,
 # which can be used to pass additional information or configuration to the Dockerfile
 # during the build process. You can set this variable when invoking make,
 # like: make docker-build DOCKER_BUILD_ARGS="MY_ARG=value ANOTHER_ARG=value2"
 # For example:
-# DOCKER_BUILD_ARGS ?= "GIT_USER=${GIT_USER} GIT_TOKEN=${GIT_TOKEN}"
+# DOCKER_BUILD_ARGS ?= GIT_USER=${GIT_USER} GIT_TOKEN=${GIT_TOKEN}
 DOCKER_BUILD_ARGS ?= 
 
+DEFAULT_BUILD_ARGS := EXEC_FILE=$(PROJECT_NAME) \
+					VERSION=$(VERSION) \
+					COMMIT=$(COMMIT) \
+					BRANCH=$(BRANCH) \
+					BUILD_DATE=$(BUILD_DATE)
+
 # DOCKER_BUILD_ARG_FLAGS processes DOCKER_BUILD_ARGS and prepends --build-arg to each argument
-DOCKER_BUILD_ARG_FLAGS = $(foreach arg,$(DOCKER_BUILD_ARGS),--build-arg $(arg))
-
-# Setup the -ldflags option for go build here, interpolate the variable values
-LDFLAGS = -ldflags "-X $(VERSION_PKG).VERSION=$(VERSION) -X $(VERSION_PKG).COMMIT=$(COMMIT) -X $(VERSION_PKG).BRANCH=$(BRANCH) -X $(VERSION_PKG).BUILDDATE=$(BUILD_DATE)"
-
-GOOPTS ?= $(LDFLAGS)
-
-VERSION   ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "v0.0.0")
-COMMIT     ?= $(strip $(shell gis rev-parse --short HEAD 2>&1 | grep -v '^fatal:' || echo "dev"))
-BRANCH     ?= $(strip $(shell gis symbolic-ref --short HEAD 2>/dev/null || git rev-parse --short HEAD 2>/dev/null || echo "main"))
-BUILD_DATE = $(shell date +%FT%T%z)
+DOCKER_BUILD_ARG_FLAGS := $(foreach arg,$(DOCKER_BUILD_ARGS),--build-arg $(arg))$(foreach arg,$(DEFAULT_BUILD_ARGS),--build-arg $(arg))
+#DOCKER_BUILD_ARG_FLAGS = $(DEFAULT_BUILD_ARGS) $(DOCKER_BUILD_ARGS)
 
 # DOCKER_LOCAL_FILE allows you to specify a custom Dockerfile for local development,
 # which can be useful to speed up build times by using a simpler Dockerfile that doesn't
@@ -60,6 +63,28 @@ BUILD_DATE = $(shell date +%FT%T%z)
 # You can set this variable when invoking make, like:
 # DOCKER_LOCAL_FILE ?= local.Dockerfile
 DOCKER_LOCAL_FILE ?=
+
+# DOCKER_BUILD_COMMON is a variable that contains the common flags for the docker build command,
+# which are used in both local and CI environments.
+# It is defined here to avoid duplication of the flags in the different target/branches.
+# The actual flags are set in the respective branches to allow for differences in how the
+# build should be executed in local vs CI environments (e.g., using a local Dockerfile vs a default one,
+# or including/excluding certain build arguments).
+DOCKER_BUILD_COMMON := $(DOCKER_BUILD_ARG_FLAGS) \
+					-t $(IMG)
+
+ifdef SSH_AUTH_SOCK
+	DOCKER_BUILD_COMMON += --ssh default=$${SSH_AUTH_SOCK}
+endif
+
+ifneq ($(DOCKER_LOCAL_FILE),)
+	DOCKER_BUILD_COMMON += -f $(DOCKER_LOCAL_FILE)
+endif
+
+# Setup the -ldflags option for go build here, interpolate the variable values
+LDFLAGS = -ldflags "-X $(VERSION_PKG).VERSION=$(VERSION) -X $(VERSION_PKG).COMMIT=$(COMMIT) -X $(VERSION_PKG).BRANCH=$(BRANCH) -X $(VERSION_PKG).BUILDDATE=$(BUILD_DATE)"
+
+GOOPTS ?= $(LDFLAGS)
 
 RUN_ARGS ?=
 
@@ -70,18 +95,23 @@ NPROCS = $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 1)
 # Automatically scale jobs to the number of CPU cores
 .MAKEFLAGS += -j$(NPROCS)
 
-# PLATFORMS defines the target platforms for the manager image be built to provide support to multiple
+# PLATFORMS defines the target platforms for the manager binary be built to provide support to multiple
+# architectures. (i.e. make build-all). To use this option, you can set the PLATFORMS variable when invoking make, like:
+# PLATFORMS="linux/amd64 linux/arm64" make build-all
+PLATFORMS ?= linux/amd64 linux/arm linux/arm64 linux/ppc64le linux/s390x \
+			windows/amd64 windows/arm64 \
+			darwin/amd64 darwin/arm64
+
+# DOCKER_PLATFORMS defines the target platforms for the manager image be built to provide support to multiple
 # architectures. (i.e. make docker-buildx IMG=myregistry/mypoperator:0.0.1).
 # To use this option you need to:
 # - be able to use docker buildx. More info: https://docs.docker.com/build/buildx/
 # - have enabled BuildKit. More info: https://docs.docker.com/develop/develop-images/build_enhancements/
 # - be able to push the image to your registry (i.e. if you do not set a valid value via IMG=<myregistry/image:<tag>> then the export will fail)
 # To adequately provide solutions that are compatible with multiple platforms, you should consider using this option.
-PLATFORMS ?= linux/arm64 linux/amd64 linux/s390x linux/ppc64le \
-	darwin/amd64 darwin/arm64 \
-	windows/amd64
+#DOCKER_PLATFORMS ?= $(shell echo $(PLATFORMS) | tr ' ' ',')
+DOCKER_PLATFORMS ?= linux/amd64 linux/arm linux/arm64 linux/ppc64le linux/s390x
 
-DOCKER_PLATFORMS = $(shell echo $(PLATFORMS) | tr ' ' ',')
 
 SUPPRESS_OUTPUT ?= $(if $(CI),false,true)
 
@@ -139,7 +169,7 @@ BG_LIGHTPURPLE  := $(shell tput -Txterm setab 4)
 BG_PURPLE       := $(shell tput -Txterm setab 5)
 BG_BLUE         := $(shell tput -Txterm setab 6)
 BG_WHITE        := $(shell tput -Txterm setab 7)
-RESET           := $(shell tput -Txterm sgr0)    
+RESET           := $(shell tput -Txterm sgr0)
 
 
 # END COLORS
@@ -174,7 +204,7 @@ TARGET_WIDTH ?= 22
 # width allocated for the target name.
 # The '-7' accounts for the spacing and formatting characters between
 # the target and description.
-#DESC_MAX_LEN := $(shell echo ${MAX_LINE_LENGTH}-${TARGET_WIDTH}-7 | bc)
+#DESC_MAX_LEN := $(shell echo $(MAX_LINE_LENGTH)-$(TARGET_WIDTH)-7 | bc)
 DESC_MAX_LEN := $(shell echo $$(($(MAX_LINE_LENGTH)-$(TARGET_WIDTH)-2)))
 
 # This is used to split long descriptions into multiple lines with proper 
@@ -187,7 +217,7 @@ DESC_MAX_LEN := $(shell echo $$(($(MAX_LINE_LENGTH)-$(TARGET_WIDTH)-2)))
 common-help: ## Display this help.
 	@echo ''
 	@echo '$(BOLD)Usage:$(RESET)'
-	@echo '  ${FG_YELLOW}make${RESET} ${FG_GREEN}<target>${RESET}'
+	@echo '  $(FG_YELLOW)make$(RESET) $(FG_GREEN)<target>$(RESET)'
 	@echo ''
 	@echo '$(BOLD)Targets:$(RESET)'
 	@awk 'BEGIN {FS = ":.*##";} /^[a-zA-Z_0-9-]+:.*?##/ { \
@@ -306,7 +336,6 @@ common-test-all-coverage: gocovmerge gotestcoverage ## Run all tests (unit + e2e
 		$(MAKE) coverage; \
 	}
 
-
 .PHONY: common-lint
 common-lint: golangci-lint ## Run golangci-lint linter
 	@echo "$(FG_BLUE)>> $(FG_GREEN)running golangci-lint$(RESET)"
@@ -328,16 +357,16 @@ common-coverage: gotestcoverage ## Check code coverage against the defined thres
 common-check_license:
 	@echo "$(FG_BLUE)>> $(FG_GREEN)checking license header$(RESET)"
 	@licRes=$$(for file in $$(find . -type f -iname '*.go' ! -path './vendor/*') ; do \
-               awk 'NR<=3' $$file | sed -e 's/\r//g' | grep -Eq "(Copyright|generated|GENERATED)" || echo $$file; \
-       done); \
-       if [ -n "$${licRes}" ]; then \
-               echo "license header checking failed:"; \
-			   for file in $${licRes}; do \
-				   echo "  - $$file"; \
-				   awk 'NR<=3' $$file; \
-			   done; \
-               exit 1; \
-       fi
+		awk 'NR<=3' $$file | sed -e 's/\r//g' | grep -Eq "(Copyright|generated|GENERATED)" || echo $$file; \
+	done); \
+	if [ -n "$${licRes}" ]; then \
+		echo "license header checking failed:"; \
+		for file in $${licRes}; do \
+			echo "  - $$file"; \
+			awk 'NR<=3' $$file; \
+		done; \
+		exit 1; \
+	fi
 
 .PHONY: common-build
 common-build: fmt vet ## Build binary.
@@ -372,37 +401,19 @@ common-run: fmt vet ## Run a binary from your host.
 # More info: https://docs.docker.com/develop/develop-images/build_enhancements/
 .PHONY: common-docker-build
 common-docker-build: ## Build docker image with the manager.
-	@echo "$(FG_BLUE)>> $(FG_GREEN)building docker image ${IMG}$(RESET)"
-ifndef CI
-ifneq ($(DOCKER_LOCAL_FILE),)
-	@echo "$(FG_BLUE)>> $(FG_GREEN)using local Dockerfile: ${DOCKER_LOCAL_FILE}$(RESET)"
-	$(CONTAINER_TOOL) build \
-		-f $(DOCKER_LOCAL_FILE) \
-		--ssh default=$${SSH_AUTH_SOCK} \
-		$(DOCKER_BUILD_ARG_FLAGS) \
-		-t ${IMG} .
-else
-	$(CONTAINER_TOOL) build \
-		--ssh default=$${SSH_AUTH_SOCK} \
-		$(DOCKER_BUILD_ARG_FLAGS) \
-		-t ${IMG} .
-endif
-else
-	$(CONTAINER_TOOL) build \
-		$(DOCKER_BUILD_ARG_FLAGS) \
-		-t ${IMG} .
-endif
+	@echo "$(FG_BLUE)>> $(FG_GREEN)building docker image $(IMG)$(RESET)"
+	$(CONTAINER_TOOL) build $(DOCKER_BUILD_COMMON) .
 
 .PHONY: common-docker-push
 common-docker-push: ## Push docker image with the manager.
-	@echo "$(FG_BLUE)>> $(FG_GREEN)pushing docker image ${IMG}$(RESET)"
-	$(CONTAINER_TOOL) push ${IMG}
+	@echo "$(FG_BLUE)>> $(FG_GREEN)pushing docker image $(IMG)$(RESET)"
+	$(CONTAINER_TOOL) push $(IMG)
 
 .PHONY: common-docker-buildx
 common-docker-buildx: ## Build and push docker image for the manager for cross-platform support
-	@echo "$(FG_BLUE)>> $(FG_GREEN)building and pushing docker image ${IMG} for platforms: ${DOCKER_PLATFORMS}$(RESET)"
+	@echo "$(FG_BLUE)>> $(FG_GREEN)building and pushing docker image $(IMG) for platforms: $(DOCKER_PLATFORMS)$(RESET)"
 	@set -euo pipefail; \
-	# make a temp Dockerfile that injects --platform=${BUILDPLATFORM} in the FIRST FROM
+	# make a temp Dockerfile that injects --platform=$${BUILDPLATFORM} in the FIRST FROM
 	tmp="$$(mktemp -q $(BASE_DIR)/Dockerfile.cross.XXXXXX)"; \
 	awk 'BEGIN{done=0} !done && $$1=="FROM"{ sub(/^FROM/,"FROM --platform=$${BUILDPLATFORM}"); done=1 } {print}' Dockerfile > "$$tmp"; \
 	# ensure the builder exists (idempotent)
@@ -413,19 +424,12 @@ common-docker-buildx: ## Build and push docker image for the manager for cross-p
 	fi; \
 	# build using that builder (don't mutate global builder state)
 	$(CONTAINER_TOOL) buildx build \
-	  --load \
-	  $(DOCKER_BUILD_ARG_FLAGS) \
+	  --push \
 	  --builder $(PROJECT_NAME)-builder \
 	  --platform="$(DOCKER_PLATFORMS)" \
-	  --cache-to=type=registry,ref=$(DOCKER_TAG_BASE):latest \
-	  --cache-from=type=registry,ref=$(DOCKER_TAG_BASE):latest \
-	  --tag "$(IMG)" \
-	  --tag "$(DOCKER_TAG_BASE):latest" \
+	  $(DOCKER_BUILD_COMMON) \
 	  -f "$$tmp" . && \
 	rm -f "$$tmp"
-
-#	  --push \
-#
 
 ##@ Dependencies
 

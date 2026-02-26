@@ -103,7 +103,7 @@ var _ = Describe("Server E2E Tests", func() {
 			Expect(err).NotTo(HaveOccurred(), "should successfully parse template file")
 
 			By("creating card converter")
-			cardCreator = card.NewTemplatedCardCreator(tmpl, false)
+			cardCreator = card.NewTemplatedCardCreator(tmpl, false, logger)
 
 			By("setting up routes with Workflow webhook")
 			routes = []transport.Route{

@@ -1,6 +1,6 @@
 # E2E Testing with Coverage
 
-This directory contains end-to-end tests for prometheus-msteams.
+This directory contains end-to-end tests for `prometheus-msteams`.
 
 ## Running E2E Tests
 
@@ -107,7 +107,7 @@ INTEGRATION_TEST_WEBHOOK_URL="https://your-webhook-url" make test-e2e
 
 2. **Use -covermode=atomic**: This is required when merging coverage profiles from parallel tests.
 
-3. **View merged coverage**: After running `make test-all-coverage`, view the HTML report:
+3. **View merged coverage**: After running `make test-all-coverage`, view the html report:
    ```bash
    go tool cover -html=cover.out
    ```

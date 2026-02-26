@@ -38,17 +38,6 @@ type ActionSubmit struct {
 }
 ```
 
-### Feature Versions
-
-| Version | Notable Features |
-|---------|-----------------|
-| 1.0 | Basic elements, actions, and containers |
-| 1.1 | Height property, SelectAction |
-| 1.2 | BackgroundImage, MinHeight, Bleed, FontType, Fallback |
-| 1.3 | RGBA colors, TargetWidth, Input validation (ErrorMessage, IsRequired, Label) |
-| 1.5 | RTL support, Tooltip, IsEnabled, Mode, Style (heading), Table element |
-| 1.6 | Metadata, CaptionSource, Dynamic choice filtering (Data.Query), Refresh.Expires, Input label positioning |
-
 ## Validation
 
 ### Automatic Validation
