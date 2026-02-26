@@ -160,7 +160,7 @@ func ParseTemplateFile(f string) (*template.Template, error) {
 		return nil, fmt.Errorf("template file %s does not exist", f)
 	}
 
-	tmpl, err := template.FromGlobs(f)
+	tmpl, err := template.FromGlobs([]string{f})
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse template: %v: %v", err, err)
 	}

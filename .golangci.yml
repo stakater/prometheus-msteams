@@ -90,7 +90,7 @@ linters:
           - go.opencensus.io/stats/view
           - go.opencensus.io/tag
           - go.opencensus.io/trace
-          - github.com/go-kit/kit/log
+          - github.com/go-kit/log
           - github.com/google/go-cmp/cmp
           - github.com/hashicorp/go-retryablehttp
           - github.com/josephburnett/jd/lib
@@ -111,7 +111,7 @@ linters:
       # path to a file containing a list of functions to exclude from checking
       # see https://github.com/kisielk/errcheck#excluding-functions for details
       exclude-functions:
-        - (github.com/go-kit/kit/log.Logger).Log
+        - (github.com/go-kit/log.Logger).Log
 
     #unused:
     #  # treat code as a program (not a library) and report unused exported identifiers; default is false.
