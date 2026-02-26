@@ -31,149 +31,19 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-/*
-func TestRunApplication(t *testing.T) {
-	// Not a unit test - this is an end-to-end test that runs the application
-	// with different flags to ensure it starts without errors.
-	// For actual e2e tests, see test/e2e/e2e_test.go"
-	t.SkipNow()
-	tests := []struct {
-		name  string
-		flags []string
-	}{
-		{
-			name:  "run application without errors",
-			flags: []string{},
-		},
-		{
-			name: "run application with version flag",
-			flags: []string{
-				"-version",
-			},
-		},
-		{
-			name: "run application with json logs enabled",
-			flags: []string{
-				"-log-format", "json",
-			},
-		},
-		{
-			name: "run application with fmt logs enabled",
-			flags: []string{
-				"-log-format", "fmt",
-			},
-		},
-		{
-			name: "run application with debug logs enabled",
-			flags: []string{
-				"-debug",
-			},
-		},
-		{
-			name: "run application with custom HTTP address",
-			flags: []string{
-				"-http-addr", ":8080",
-			},
-		},
-		{
-			name: "run application with auto escape underscores disabled",
-			flags: []string{
-				"-auto-escape-underscores=false",
-			},
-		},
-		{
-			name: "run application with jaeger trace enabled",
-			flags: []string{
-				"-jaeger-trace=true",
-			},
-		},
-		{
-			name: "run application with jaeger trace enabled and custom agent",
-			flags: []string{
-				"-jaeger-trace=true",
-				"-jaeger-agent=custom-agent:6831",
-			},
-		},
-		{
-			name: "run application with default request uri",
-			flags: []string{
-				"-teams-request-uri", "/alertmanager",
-			},
-		},
-		{
-			name: "run application with default webhook connector",
-			flags: []string{
-				"-teams-incoming-webhook-url", "default",
-			},
-		},
-		{
-			name: "run application with config file",
-			flags: []string{
-				"-config-file", "./testdata/test-config.yaml",
-			},
-		},
-		{
-			name: "run application with custom idle connection timeout",
-			flags: []string{
-				"-idle-conn-timeout=1s",
-			},
-		},
-		{
-			name: "run application with custom TLS handshake timeout",
-			flags: []string{
-				"-tls-handshake-timeout=1s",
-			},
-		},
-		{
-			name: "run application with custom max idle connections",
-			flags: []string{
-				"-max-idle-conns=1",
-			},
-		},
-		{
-			name: "run application with insecure skip verify enabled",
-			flags: []string{
-				"-insecure-skip-verify=true",
-			},
-		},
-		{
-			name: "run application with max retry count of 1",
-			flags: []string{
-				"-max-retry-count=1",
-			},
-		},
-		{
-			name: "run application with max retry count of 5",
-			flags: []string{
-				"-max-retry-count=5",
-			},
-		},
-		{
-			name: "run application with strict validation of webhook url enabled",
-			flags: []string{
-				"-validate-webhook-url=true",
-			},
-		},
-	}
-	defaultArgs := []string{
-		"prometheus-msteams",
-		"-template-file", "../../default-message-workflow-card.tmpl",
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			os.Args = defaultArgs
-			os.Args = append(os.Args, tt.flags...)
-			err := Run()
-			assert.NoError(t, err)
-		})
-	}
-}
-*/
-
 func TestParseFlagsDefaults(t *testing.T) {
-	// Save original args
+	// Save original args and environment
 	oldArgs := os.Args
 	defer func() { os.Args = oldArgs }()
+
+	// Clear environment variables that might interfere with flag parsing
+	oldVersion := os.Getenv("VERSION")
+	os.Unsetenv("VERSION")
+	defer func() {
+		if oldVersion != "" {
+			os.Setenv("VERSION", oldVersion)
+		}
+	}()
 
 	// Set test args with just program name
 	os.Args = []string{"prometheus-msteams"}
@@ -195,6 +65,15 @@ func TestParseFlagsDefaults(t *testing.T) {
 func TestParseFlagsWorkflowWebhookUsesCorrectTemplate(t *testing.T) {
 	oldArgs := os.Args
 	defer func() { os.Args = oldArgs }()
+
+	// Clear environment variables that might interfere with flag parsing
+	oldVersion := os.Getenv("VERSION")
+	os.Unsetenv("VERSION")
+	defer func() {
+		if oldVersion != "" {
+			os.Setenv("VERSION", oldVersion)
+		}
+	}()
 
 	os.Args = []string{
 		"prometheus-msteams",
@@ -287,6 +166,17 @@ func TestSetupHTTPClientInsecureSkipVerify(t *testing.T) {
 	client := setupHTTPClient(cfg)
 	assert.NotNil(t, client)
 	assert.NotNil(t, client.Transport)
+}
+
+func TestSetupTracerEnabled(t *testing.T) {
+	cfg := Config{
+		JaegerTrace:     true,
+		JaegerAgentAddr: "localhost:6831",
+	}
+	logger := setupLogger(Config{LogFormat: "json", DebugLogs: false})
+
+	err := setupTracer(cfg, logger)
+	assert.NoError(t, err)
 }
 
 func TestSetupTracerDisabled(t *testing.T) {
