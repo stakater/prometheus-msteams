@@ -425,7 +425,7 @@ common-docker-buildx: ## Build and push docker image for the manager for cross-p
 	$(CONTAINER_TOOL) buildx build \
 	  --push \
 	  --builder $(PROJECT_NAME)-builder \
-	  --platform="$(DOCKER_PLATFORMS)" \
+	  --platform="$(shell echo $(DOCKER_PLATFORMS) | tr ' ' ',')" \
 	  $(DOCKER_BUILD_COMMON) \
 	  -f "$$tmp" . && \
 	rm -f "$$tmp"

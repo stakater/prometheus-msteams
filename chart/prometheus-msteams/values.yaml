@@ -2,7 +2,7 @@
 replicaCount: 1
 
 image:
-  repository: ghcr.io/stakater/prometheus-msteams
+  repository: ghcr.io/stakater/public/prometheus-msteams
   # Remove comment to override the default tag (which is the chart appVersion)
   #tag: v1.0.0
   pullPolicy: Always
@@ -44,9 +44,10 @@ affinity: {}
 
 containerSecurityContext: {}
 
-podSecurityContext:
-  runAsUser: 1000
-  runAsNonRoot: true
+podSecurityContext: {}
+#podSecurityContext:
+#  runAsUser: 1000
+#  runAsNonRoot: true
 
 priorityClassName: ""
 
