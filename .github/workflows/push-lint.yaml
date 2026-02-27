@@ -39,7 +39,6 @@ jobs:
           VERSION: ${{ steps.tag.outputs.TAG }}
           COMMIT: ${{ github.sha }}
           BRANCH: ${{ github.ref_name }}
-          DOCKER_BUILD_ARGS: --pull --push --cache-to type=inline
 
       - name: Build Docker image
         run: make docker-build
@@ -48,4 +47,3 @@ jobs:
           VERSION: ${{ steps.tag.outputs.TAG }}
           COMMIT: ${{ github.sha }}
           BRANCH: ${{ github.ref_name }}
-          DOCKER_BUILD_ARGS: --pull --push --cache-to type=inline

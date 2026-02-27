@@ -42,9 +42,9 @@ jobs:
           VERSION: ${{ steps.tag.outputs.TAG }}
           COMMIT: ${{ github.sha }}
           BRANCH: ${{ github.ref_name }}
-          DOCKER_BUILD_ARGS: --pull --push --cache-to type=inline
 
       - name: Build Docker image
+        if: github.actor != 'dependabot[bot]'
         run: make docker-build
         env:
           DOCKER_TAG_BASE: ${{ steps.docker.outputs.IMAGE_REPOSITORY }}
@@ -54,6 +54,7 @@ jobs:
           DOCKER_BUILD_ARGS: --pull --push --cache-to type=inline
 
       - name: Comment on PR
+        if: github.actor != 'dependabot[bot]'
         uses: thollander/actions-comment-pull-request@v3
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
