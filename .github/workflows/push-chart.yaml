@@ -6,11 +6,6 @@ on:
       - main
     paths:
       - 'chart/**'
-  pull_request:
-    branches:
-      - 'main'
-    paths:
-      - 'chart/**'
 
 env:
   REGISTRY: ghcr.io/stakater

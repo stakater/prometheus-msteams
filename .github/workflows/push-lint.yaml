@@ -1,6 +1,6 @@
-name: Pull Request - Lint
+name: Push - Lint
 on:
-  pull_request:
+  push:
     branches: 
       - "main"
 
@@ -19,15 +19,12 @@ jobs:
           submodules: recursive
           persist-credentials: false # otherwise, the token used is the GITHUB_TOKEN, instead of your personal token
           fetch-depth: 0 # otherwise, you will fail to push refs to dest repo
-          ref: ${{github.event.pull_request.head.sha}}
 
       - name: Setup Docker
         id: docker
         uses: ./.github/actions/docker
         with:
           REGISTRY_URL: ${{ env.REGISTRY }}
-          REGISTRY_USERNAME: ${{ env.GHCR_USERNAME }}
-          REGISTRY_PASSWORD: ${{ secrets.GHCR_TOKEN }}
 
       - name: Generate image tag
         id: tag
@@ -52,12 +49,3 @@ jobs:
           COMMIT: ${{ github.sha }}
           BRANCH: ${{ github.ref_name }}
           DOCKER_BUILD_ARGS: --pull --push --cache-to type=inline
-
-      - name: Comment on PR
-        uses: thollander/actions-comment-pull-request@v3
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          comment-tag: ci-report
-          message: |-
-            @${{ github.actor }} Image is available for testing.
-            `docker pull ${{ steps.docker.outputs.IMAGE_REPOSITORY }}:${{ steps.tag.outputs.TAG }}`
