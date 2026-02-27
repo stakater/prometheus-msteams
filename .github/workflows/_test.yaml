@@ -1,0 +1,52 @@
+name: Test
+
+on:
+  workflow_call:
+    inputs:
+      TEST_COVERAGE_FILE:
+        required: false
+        type: string
+        default: ""
+
+env:
+  REGISTRY: ghcr.io/stakater
+  GHCR_USERNAME: stakater-user
+
+jobs:
+  test:
+    name: Run tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+            go-version-file: 'go.mod'
+
+      - name: Show Go Version
+        run: go version
+
+      - name: Run tests
+        if: ${{ inputs.TEST_COVERAGE_FILE == '' }}
+        run: make test
+
+      - name: Run tests with coverage
+        if: ${{ inputs.TEST_COVERAGE_FILE != '' }}
+        run: make test-coverage
+        env:
+          TEST_COVERAGE_FILE: ${{ inputs.TEST_COVERAGE_FILE }}
+
+      - name: Check Code Coverage
+        if: ${{ inputs.TEST_COVERAGE_FILE != '' }}
+        id: coverage
+        uses: stakater/.github/.github/actions/operator/coverage@main
+        with:
+          TARGET_BRANCH: ${{ github.event.repository.default_branch }}
+          COVERAGE_CONFIG: ./.github/.testcoverage.yml
+          COVERAGE_PROFILE: ${{ inputs.TEST_COVERAGE_FILE }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

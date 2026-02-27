@@ -42,11 +42,9 @@ jobs:
 
       - name: Setup Docker
         id: docker
-        uses: stakater/.github/.github/actions/operator/docker@main
-        env:
-          CONTAINER_REGISTRY_URL: ${{ env.REGISTRY }}
-          CONTAINER_REGISTRY_USERNAME: ${{ env.GHCR_USERNAME }}
-          CONTAINER_REGISTRY_PASSWORD: ${{ secrets.GHCR_TOKEN }}
+        uses: ./.github/actions/docker
+        with:
+          REGISTRY_URL: ${{ env.REGISTRY }}
 
       - name: Build Docker image
         run: make docker-build

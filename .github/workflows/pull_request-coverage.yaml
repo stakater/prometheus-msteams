@@ -1,0 +1,16 @@
+name: Pull Request - Code Coverage
+on:
+  pull_request:
+    branches: 
+      - "main"
+
+env:
+  REGISTRY: ghcr.io/stakater
+  GHCR_USERNAME: stakater-user
+
+jobs:
+  code_coverage:
+    name: Check Code Coverage
+    uses: ./.github/workflows/_test.yaml
+    with:
+      TEST_COVERAGE_FILE: cover.out

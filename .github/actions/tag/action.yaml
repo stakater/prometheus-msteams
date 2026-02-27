@@ -1,0 +1,62 @@
+name: "Generate Tag"
+description: "Setup Docker"
+inputs:
+  RELEASE_BRANCH:
+    description: Release branch to push changes
+    required: false
+    default: main
+
+  AUTO_GENERATED:
+    description: Automatically bumps to next version
+    required: false
+    default: "true"
+
+outputs:
+  TAG:
+    description: "The tag for the workflow run"
+    value: ${{ steps.tag.outputs.TAG }}
+
+  PR_TAG:
+    description: "The PR tag for the workflow run. This can be appended to the version for images built for PRs."
+    value: ${{ steps.tag.outputs.PR_TAG }}
+
+  PUSH_TAG:
+    description: "The commit hash for the commit. This can be appended to the version for pushing images."
+    value: ${{ steps.tag.outputs.PUSH_TAG }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Generate Tag
+      if: ${{ inputs.AUTO_GENERATED == 'true' }}
+      id: generate
+      uses: anothrNick/github-tag-action@1.75.0
+      env:
+        GITHUB_TOKEN: ${{ env.GITHUB_TOKEN }}
+        WITH_V: true
+        DEFAULT_BUMP: patch
+        RELEASE_BRANCHES: ${{ inputs.RELEASE_BRANCH }}
+        DRY_RUN: true
+    
+    - name: Get Tag from Github Ref
+      if: ${{ inputs.AUTO_GENERATED != 'true' }}
+      id: generate_tag
+      shell: bash
+      run: |
+        echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
+
+    - name: Set Tag
+      id: tag
+      shell: bash
+      run: |
+        sha=$GITHUB_SHA
+        tag="-SNAPSHOT-PR-${{ github.event.pull_request.number }}-${sha:0:8}"
+        if [ "${{ inputs.AUTO_GENERATED }}" = 'true' ]; then
+          version="${{ steps.generate.outputs.new_tag }}"
+          echo "TAG=${version#v}" >> $GITHUB_OUTPUT
+        else
+          version="${{ steps.generate_tag.outputs.RELEASE_VERSION }}"
+          echo "TAG=${version#v}" >> $GITHUB_OUTPUT
+        fi
+        echo "PR_TAG=$(echo ${tag})" >> $GITHUB_OUTPUT
+        echo "PUSH_TAG=-${sha:0:8}" >> $GITHUB_OUTPUT

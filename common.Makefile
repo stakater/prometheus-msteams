@@ -234,7 +234,7 @@ common-help: ## Display this help.
 				if (pos == 0) pos = $(DESC_MAX_LEN); \
 				\
 				printf "$(FG_GREEN)%s$(RESET)\n  ", substr(desc, 1, pos); \
-				printf "%*s", $(TARGET_WIDTH), ""; \
+				printf "%*s", $(TARGET_WIDTH) - 4, ""; \
 				\
 				desc = substr(desc, pos + 1); \
 			} \
@@ -430,6 +430,76 @@ common-docker-buildx: ## Build and push docker image for the manager for cross-p
 	  -f "$$tmp" . && \
 	rm -f "$$tmp"
 
+
+##@ Helm
+
+HELM_CHART_VERSION ?= $(shell yq '.version' $(HELM_CHART_DIR)/Chart.yaml)
+HELM_CHART_DIR ?= chart/$(PROJECT_NAME)
+HELM_REGISTRY ?= $(DOCKER_REPO_BASE)/charts
+HELM := $(shell command -v helm 2>/dev/null || echo $(LOCALBIN)/helm)
+
+.PHONY: common-helm-reqs
+common-helm-reqs: ## Check that all required variables for helm packaging and release are set
+	@missing=0; \
+	if [ ! -d "$(HELM_CHART_DIR)" ]; then echo "$(FG_RED)ERROR: HELM_CHART_DIR ($(HELM_CHART_DIR)) does not exist$(RESET)"; missing=1; fi; \
+	if [ ! -f "$(HELM_CHART_DIR)/Chart.yaml" ]; then echo "$(FG_RED)ERROR: Chart.yaml not found in $(HELM_CHART_DIR)$(RESET)"; missing=1; fi; \
+	if [ -z "$(GIT_USER)" ]; then echo "$(FG_RED)ERROR: GIT_USER is not set$(RESET)"; missing=1; fi; \
+	if [ -z "$(GIT_TOKEN)" ]; then echo "$(FG_RED)ERROR: GIT_TOKEN is not set$(RESET)"; missing=1; fi; \
+	if [ -z "$(IMG)" ]; then echo "$(FG_RED)ERROR: IMG is not set$(RESET)"; missing=1; fi; \
+	if [ "$${missing}" -ne 0 ]; then echo "$(FG_BLUE)>> $(FG_RED)One or more required variables are missing. Aborting.$(RESET)"; exit 1; fi
+
+.PHONY: common-helm-install
+common-helm-install: ## Install helm locally if not already installed
+	@echo "$(FG_BLUE)>> $(FG_GREEN)Checking for helm...$(RESET)"
+	@if command -v helm >/dev/null 2>&1; then \
+		echo "$(FG_BLUE)>> $(FG_GREEN)helm found at $$(command -v helm) - skipping install$(RESET)"; \
+	elif [ -x "$(LOCALBIN)/helm" ]; then \
+		echo "$(FG_BLUE)>> $(FG_GREEN)helm already installed at $(LOCALBIN)/helm - skipping install$(RESET)"; \
+	else \
+		echo "$(FG_BLUE)>> $(FG_GREEN)Installing helm to $(LOCALBIN)...$(RESET)"; \
+		mkdir -p $(LOCALBIN); \
+		curl -sSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | \
+		HELM_INSTALL_DIR=$(LOCALBIN) bash; \
+	fi
+
+.PHONY: common-helm-lint
+common-helm-lint: common-helm-install ## Lint the Helm chart
+	@echo "$(FG_BLUE)>> $(FG_GREEN)Linting Helm chart...$(RESET)"
+	@command -v $(HELM) >/dev/null 2>&1 || { \
+		echo "$(FG_RED)ERROR: $(HELM) not found. Install it: https://helm.sh/docs/intro/install/$(RESET)"; \
+		exit 1; \
+	}
+	$(HELM) lint $(HELM_CHART_DIR) --strict
+	@echo "$(FG_BLUE)>> $(FG_GREEN)✓ Helm chart linting passed!$(RESET)"
+
+.PHONY: common-helm-package
+common-helm-package: common-helm-lint common-helm-reqs ## Package the Helm chart
+	@echo "$(FG_BLUE)>> $(FG_GREEN)Packaging Helm chart...$(RESET)"
+	@mkdir -p dist
+	$(HELM) package $(HELM_CHART_DIR) -d dist --version $(HELM_CHART_VERSION)
+	@echo "$(FG_BLUE)>> $(FG_GREEN)✓ Chart packaged: dist/$(PROJECT_NAME)-$(HELM_CHART_VERSION).tgz$(RESET)"
+
+.PHONY: common-helm-release
+common-helm-release: common-helm-package common-helm-reqs ## Release Helm chart to OCI registry
+	@echo "$(FG_BLUE)>> $(FG_GREEN)Releasing Helm chart to OCI registry...$(RESET)"
+	@command -v $(HELM) >/dev/null 2>&1 || { \
+		echo "$(FG_RED)ERROR: $(HELM) not found$(RESET)"; \
+		exit 1; \
+	}
+	@if [ -z "$(GIT_TOKEN)" ]; then \
+		echo "$(FG_RED)ERROR: GIT_TOKEN not set$(RESET)"; \
+		echo "For local dev, export GIT_TOKEN with your GitHub PAT:"; \
+		echo "  export GIT_TOKEN=ghp_xxxxxxxxxxxx"; \
+		echo ""; \
+		echo "Attempting to use existing Docker credentials..."; \
+	else \
+		echo "$(FG_BLUE)>> $(FG_GREEN)Logging in to GitHub Container Registry...$(RESET)"; \
+		echo "$(GIT_TOKEN)" | $(HELM) registry login ghcr.io -u $(GIT_USER) --password-stdin; \
+	fi
+	@echo "$(FG_BLUE)>> $(FG_GREEN)Pushing chart to oci://$(HELM_REGISTRY)/$(PROJECT_NAME):$(HELM_CHART_VERSION)$(RESET)"
+	$(HELM) push dist/$(PROJECT_NAME)-$(HELM_CHART_VERSION).tgz oci://$(HELM_REGISTRY)
+	@echo "$(FG_BLUE)>> $(FG_GREEN)✓ Chart released to: oci://$(HELM_REGISTRY)/$(PROJECT_NAME):$(HELM_CHART_VERSION)$(RESET)"
+
 ##@ Dependencies
 
 ## Location to install dependencies to
@@ -441,12 +511,14 @@ GOVULNCHECK ?= $(LOCALBIN)/govulncheck
 GOLANGCI_LINT = $(LOCALBIN)/golangci-lint
 GOTESTCOVERAGE ?= $(LOCALBIN)/go-test-coverage
 GOCOVMERGE ?= $(LOCALBIN)/gocovmerge
+KUSTOMIZE ?= $(LOCALBIN)/kustomize
 
 ## Tool Versions
 GOVULNCHECK_VERSION ?= latest
 GOCOVMERGE_VERSION ?= latest
 GOLANGCI_LINT_VERSION ?= v2.9.0
 GOTESTCOVERAGE_VERSION ?= latest
+KUSTOMIZE_VERSION ?= v5.8.2
 
 .PHONY: common-gotestcoverage
 common-gotestcoverage: $(GOTESTCOVERAGE) ## Download go-test-coverage locally if necessary.
@@ -471,6 +543,11 @@ common-golangci-lint: $(GOLANGCI_LINT) ## Download golangci-lint locally if nece
 $(GOLANGCI_LINT): $(LOCALBIN)
 	@echo "$(FG_BLUE)>> $(FG_GREEN)Installing/ensuring golangci-lint $(GOLANGCI_LINT_VERSION) to $(GOLANGCI_LINT)$(RESET)"
 	$(call go-install-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/v2/cmd/golangci-lint,$(GOLANGCI_LINT_VERSION))
+.PHONY: common-kustomize
+common-kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary.
+$(KUSTOMIZE): $(LOCALBIN)
+	@echo "$(FG_BLUE)>> $(FG_GREEN)Installing/ensuring kustomize $(KUSTOMIZE_VERSION) to $(KUSTOMIZE)$(RESET)"
+	$(call go-install-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v5,$(KUSTOMIZE_VERSION))
 
 # go-install-tool will 'go install' any package with custom target and name of binary, if it doesn't exist
 # It first checks if the binary exists locally, then checks if it exists in PATH
