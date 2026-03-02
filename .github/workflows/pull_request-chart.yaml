@@ -17,39 +17,40 @@ jobs:
     name: Lint and Test Helm Chart
     uses: ./.github/workflows/_chart_lint.yaml
 
-  release:
-    runs-on: ubuntu-latest
-    needs: chart-lint-test
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v6
-      with:
-        fetch-depth: 2
-
-    - name: Cache Helm
-      uses: actions/cache@v5
-      with:
-        path: ~/.cache/helm
-        key: helm-${{ vars.HELM_VERSION }}-${{ runner.os }}
-
-    - name: Set up Helm
-      uses: azure/setup-helm@v4.3.1
-      with:
-        version: ${{ vars.HELM_VERSION }}
-
-    - name: Publish Helm Chart
-      run: make helm-release
-      env:
-        GIT_USER: ${{ vars.GHCR_USERNAME }}
-        GIT_TOKEN: ${{ secrets.CONTAINER_REGISTRY_PASSWORD }}
-        HELM_REGISTRY: "${{ secrets.CONTAINER_REGISTRY_URL }}/charts"
-        DOCKER_REPO_BASE: ${{ secrets.CONTAINER_REGISTRY_URL }}
-
-    - name: Comment on PR
-      uses: thollander/actions-comment-pull-request@v3
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        comment-tag: helm-chart-available
-        message: |-
-          @${{ github.actor }} Helm chart is available for testing.
-          `helm pull ${{ secrets.CONTAINER_REGISTRY_URL }}/charts/${{ github.event.repository.name }} --version ${{ steps.tag.outputs.TAG }}`
+  #release:
+  #  runs-on: ubuntu-latest
+  #  needs: chart-lint-test
+  #  steps:
+  #  - name: Checkout repository
+  #    uses: actions/checkout@v6
+  #    with:
+  #      fetch-depth: 2
+  #
+  #  - name: Cache Helm
+  #    uses: actions/cache@v5
+  #    with:
+  #      path: ~/.cache/helm
+  #      key: helm-${{ vars.HELM_VERSION }}-${{ runner.os }}
+  #
+  #  - name: Set up Helm
+  #    uses: azure/setup-helm@v4.3.1
+  #    with:
+  #      version: ${{ vars.HELM_VERSION }}
+  #
+  #  - name: Publish Helm Chart
+  #    run: make helm-release
+  #    env:
+  #      GIT_USER: ${{ vars.GHCR_USERNAME }}
+  #      GIT_TOKEN: ${{ secrets.CONTAINER_REGISTRY_PASSWORD }}
+  #      HELM_REGISTRY: "${{ secrets.CONTAINER_REGISTRY_URL }}/charts"
+  #      DOCKER_REPO_BASE: ${{ secrets.CONTAINER_REGISTRY_URL }}
+  #  
+  #  - name: Comment on PR
+  #    if: endsWith(github.actor, '[bot]') == false
+  #    uses: thollander/actions-comment-pull-request@v3
+  #    with:
+  #      github-token: ${{ secrets.GITHUB_TOKEN }}
+  #      comment-tag: helm-chart-available
+  #      message: |-
+  #        @${{ github.actor }} Helm chart is available for testing.
+  #        `helm pull ${{ secrets.CONTAINER_REGISTRY_URL }}/charts/${{ github.event.repository.name }} --version ${{ steps.tag.outputs.TAG }}`

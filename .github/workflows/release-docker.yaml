@@ -75,8 +75,6 @@ jobs:
           DOCKER_BUILD_ARGS: --platform=${{ matrix.platform }}
           DOCKER_TAG_BASE: ${{ steps.docker.outputs.IMAGE_REPOSITORY }}
           VERSION: ${{ github.event.release.tag_name }}
-          COMMIT: ${{ github.sha }}
-          BRANCH: ${{ github.ref_name }}
 
       - name: Building Docker image - latest
         run: make docker-build
@@ -84,17 +82,12 @@ jobs:
           DOCKER_BUILD_ARGS: --platform=${{ matrix.platform }}
           DOCKER_TAG_BASE: ${{ steps.docker.outputs.IMAGE_REPOSITORY }}
           VERSION: latest
-          COMMIT: ${{ github.sha }}
-          BRANCH: ${{ github.ref_name }}
 
       - name: Pushing Docker image - release version
         run: make docker-push
         env:
           DOCKER_BUILD_ARGS: --platform=${{ matrix.platform }}
           DOCKER_TAG_BASE: ${{ steps.docker.outputs.IMAGE_REPOSITORY }}
-          VERSION: ${{ github.event.release.tag_name }}
-          COMMIT: ${{ github.sha }}
-          BRANCH: ${{ github.ref_name }}
 
       - name: Pushing Docker image - latest
         run: make docker-push
@@ -102,8 +95,6 @@ jobs:
           DOCKER_BUILD_ARGS: --platform=${{ matrix.platform }}
           DOCKER_TAG_BASE: ${{ steps.docker.outputs.IMAGE_REPOSITORY }}
           VERSION: latest
-          COMMIT: ${{ github.sha }}
-          BRANCH: ${{ github.ref_name }}
 
       #- name: Building Docker image - release version
       #  run: make docker-buildx

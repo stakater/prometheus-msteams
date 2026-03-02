@@ -37,7 +37,7 @@ DOCKER_REPO_NAME ?= $(PROJECT_NAME)
 DOCKER_TAG_BASE ?= $(DOCKER_REPO_BASE)/$(DOCKER_REPO_NAME)
 
 # Image URL to use all building/pushing image targets
-IMG ?= $(DOCKER_TAG_BASE):$(VERSION)
+IMG ?= $(DOCKER_TAG_BASE):$(VERSION)$(GIT_TAG)
 
 # DOCKER_BUILD_ARGS allows you to set custom build arguments for the docker build command,
 # which can be used to pass additional information or configuration to the Dockerfile

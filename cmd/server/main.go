@@ -52,8 +52,8 @@ import (
 	_ "net/http/pprof" //nolint: gosec
 
 	"github.com/oklog/run"
-	"gopkg.in/yaml.v3"
 	"github.com/peterbourgon/ff/v3"
+	"gopkg.in/yaml.v3"
 )
 
 // PromTeamsConfig is the struct representation of the config file.

@@ -32,14 +32,14 @@ jobs:
         run: make all test
         env:
           DOCKER_TAG_BASE: ${{ steps.docker.outputs.IMAGE_REPOSITORY }}
-          VERSION: ${{ steps.tag.outputs.TAG }}
-          COMMIT: ${{ github.sha }}
-          BRANCH: ${{ github.ref_name }}
+          #VERSION: ${{ steps.tag.outputs.TAG }}
+          #COMMIT: ${{ github.sha }}
+          #BRANCH: ${{ github.ref_name }}
 
       - name: Build Docker image
         run: make docker-build
         env:
           DOCKER_TAG_BASE: ${{ steps.docker.outputs.IMAGE_REPOSITORY }}
-          VERSION: ${{ steps.tag.outputs.TAG }}
-          COMMIT: ${{ github.sha }}
-          BRANCH: ${{ github.ref_name }}
+          #VERSION: ${{ steps.tag.outputs.TAG }}
+          #COMMIT: ${{ github.sha }}
+          #BRANCH: ${{ github.ref_name }}

@@ -35,8 +35,8 @@ jobs:
     - name: Publish Helm Chart
       run: make helm-release
       env:
-        VERSION: ${{ github.ref_name }}
-        TAG: ${{ github.ref_name }}
+        #VERSION: ${{ github.ref_name }}
+        GIT_TAG: ${{ github.ref_name }}
         GIT_USER: ${{ vars.GHCR_USERNAME }}
         GIT_TOKEN: ${{ secrets.CONTAINER_REGISTRY_PASSWORD }}
         HELM_REGISTRY: "${{ secrets.CONTAINER_REGISTRY_URL }}/charts"
@@ -46,7 +46,7 @@ jobs:
     #  run: make helm-release
     #  env:
     #    VERSION: ${{ github.ref_name }}
-    #    TAG: ${{ github.ref_name }}
+    #    GIT_TAG: ${{ github.ref_name }}
     #    GIT_USER: ${{ vars.GHCR_USERNAME }}
     #    GIT_TOKEN: ${{ secrets.CONTAINER_REGISTRY_PASSWORD }}
     #    HELM_REGISTRY: "${{ secrets.CONTAINER_REGISTRY_URL }}/public/charts"
