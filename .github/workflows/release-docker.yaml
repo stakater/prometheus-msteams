@@ -108,6 +108,7 @@ jobs:
       #- name: Building Docker image - release version
       #  run: make docker-buildx
       #  env:
+      #    DOCKER_PLATFORMS: ${{ env.DOCKER_PLATFORMS }}
       #    DOCKER_TAG_BASE: ${{ steps.docker.outputs.IMAGE_REPOSITORY }}
       #    VERSION: ${{ github.event.release.tag_name }}
       #    COMMIT: ${{ github.sha }}
@@ -116,6 +117,7 @@ jobs:
       #- name: Building Docker image - latest
       #  run: make docker-buildx
       #  env:
+      #    DOCKER_PLATFORMS: ${{ env.DOCKER_PLATFORMS }}
       #    DOCKER_TAG_BASE: ${{ steps.docker.outputs.IMAGE_REPOSITORY }}
       #    VERSION: latest
       #    COMMIT: ${{ github.sha }}
