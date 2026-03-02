@@ -43,25 +43,33 @@ jobs:
         sudo chmod +x /usr/local/bin/yq
 
     - name: Set version for Helm Chart
+      id: set-version
       run: |
-        # Configure git
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-
-        version=
         # Set appVersion to the release tag
         yq -i ".appVersion = \"${{ github.event.release.tag_name }}\"" chart/prometheus-msteams/Chart.yaml
+
         # Bump chart version (increment patch version)
         current_version=$(yq '.version' chart/prometheus-msteams/Chart.yaml)
         IFS='.' read -r major minor patch <<< "$current_version"
         new_version="${major}.${minor}.$((patch + 1))"
         yq -i ".version = \"${new_version}\"" chart/prometheus-msteams/Chart.yaml
+        echo "OLD_HELM_CHART_VERSION=${current_version}" >> $GITHUB_OUTPUT
+        echo "NEW_HELM_CHART_VERSION=${new_version}" >> $GITHUB_OUTPUT
+        echo "COMMIT_MSG=$(git log -1 --pretty=%B)" >> $GITHUB_OUTPUT
 
-        git add chart/prometheus-msteams/Chart.yaml
+    - name: Update commit
+      uses: EndBug/add-and-commit@v9
+      with:
+        author_name: GitHub Action
+        author_email: 'action@github.com'
+        add: 'chart/prometheus-msteams/Chart.yaml'
+        message: |
+          ${{ steps.set-version.outputs.COMMIT_MSG }}
 
-        # Amend the commit with original message + dependency info
-        git commit --amend -m "$original_msg$deps_info"
-        git push --force-with-lease
+          Update Helm chart version for release ${{ github.event.release.tag_name }}:
+            ${{ steps.set-version.outputs.OLD_HELM_CHART_VERSION }} -> ${{ steps.set-version.outputs.NEW_HELM_CHART_VERSION }}
+        commit: '--amend'
+        push: '--force-with-lease'
 
     - name: Publish Helm Chart
       run: make helm-release
