@@ -20,7 +20,7 @@ jobs:
         id: docker
         uses: ./.github/actions/docker
         with:
-          REGISTRY_URL: ${{ env.REGISTRY }}
+          REGISTRY_URL: ${{ vars.REGISTRY }}
 
       - name: Generate image tag
         id: tag

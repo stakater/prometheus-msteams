@@ -21,8 +21,8 @@ jobs:
         id: docker
         uses: ./.github/actions/docker
         with:
-          REGISTRY_URL: ${{ env.REGISTRY }}
-          REGISTRY_USERNAME: ${{ env.GHCR_USERNAME }}
+          REGISTRY_URL: ${{ vars.REGISTRY }}
+          REGISTRY_USERNAME: ${{ vars.GHCR_USERNAME }}
           REGISTRY_PASSWORD: ${{ secrets.GHCR_TOKEN }}
 
       - name: Generate image tag

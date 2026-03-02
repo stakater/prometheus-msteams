@@ -19,12 +19,12 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/helm
-          key: helm-${{ env.HELM_VERSION }}-${{ runner.os }}
+          key: helm-${{ vars.HELM_VERSION }}-${{ runner.os }}
 
       - name: Set up Helm
         uses: azure/setup-helm@v4.3.1
         with:
-          version: ${{ env.HELM_VERSION }}
+          version: ${{ vars.HELM_VERSION }}
 
       - uses: actions/setup-python@v6
         with:
@@ -60,4 +60,4 @@ jobs:
           ct install \
             --target-branch ${{ github.event.repository.default_branch }} \
             --config ct.yaml \
-            --helm-repo-extra-args "basic-auth=--username ${{ env.GHCR_USERNAME }} --password ${{ secrets.GITHUB_TOKEN }}"
+            --helm-repo-extra-args "basic-auth=--username ${{ vars.GHCR_USERNAME }} --password ${{ secrets.GITHUB_TOKEN }}"

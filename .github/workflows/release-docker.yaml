@@ -27,20 +27,20 @@ jobs:
         id: docker
         uses: stakater/.github/.github/actions/operator/docker@main
         env:
-          CONTAINER_REGISTRY_URL: ${{ env.REGISTRY }}
-          CONTAINER_REGISTRY_USERNAME: ${{ env.GHCR_USERNAME }}
+          CONTAINER_REGISTRY_URL: ${{ vars.REGISTRY }}
+          CONTAINER_REGISTRY_USERNAME: ${{ vars.GHCR_USERNAME }}
           CONTAINER_REGISTRY_PASSWORD: ${{ secrets.GHCR_TOKEN }}
 
       - name: Cache Helm
         uses: actions/cache@v4
         with:
           path: ~/.cache/helm
-          key: helm-${{ env.HELM_VERSION }}-${{ runner.os }}
+          key: helm-${{ vars.HELM_VERSION }}-${{ runner.os }}
 
       - name: Set up Helm
         uses: azure/setup-helm@v4.3.1
         with:
-          version: ${{ env.HELM_VERSION }}
+          version: ${{ vars.HELM_VERSION }}
 
       - name: Cache yq
         id: cache-yq

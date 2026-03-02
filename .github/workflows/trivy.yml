@@ -18,6 +18,10 @@ on:
 permissions:
   contents: read
 
+env:
+  REGISTRY: ghcr.io/stakater
+  GHCR_USERNAME: stakater-user
+
 jobs:
   build:
     permissions:
@@ -40,7 +44,7 @@ jobs:
         id: docker
         uses: ./.github/actions/docker
         with:
-          REGISTRY_URL: ${{ env.REGISTRY }}
+          REGISTRY_URL: ${{ vars.REGISTRY }}
 
       - name: Build Docker image
         run: make docker-build
