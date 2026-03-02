@@ -13,9 +13,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: chart-lint-test
     steps:
-    - name: Checkout repository
+    - name: Checkout code
       uses: actions/checkout@v6
       with:
+        token: ${{ secrets.GITHUB_TOKEN }}
         fetch-depth: 0
 
     - name: Cache Helm
@@ -60,8 +61,12 @@ jobs:
     - name: Update commit
       uses: EndBug/add-and-commit@v9
       with:
-        author_name: GitHub Action
-        author_email: 'action@github.com'
+        #author_name: GitHub Action
+        #author_email: 'action@github.com'
+        #default_author: github_actor
+        default_author: github_actions
+        committer_name: GitHub Actions
+        committer_email: actions@github.com
         add: 'chart/prometheus-msteams/Chart.yaml'
         message: |
           ${{ steps.set-version.outputs.COMMIT_MSG }}
@@ -71,22 +76,22 @@ jobs:
         commit: '--amend'
         push: '--force-with-lease'
 
-    - name: Publish Helm Chart
-      run: make helm-release
-      env:
-        VERSION: ${{ github.ref_name }}
-        TAG: ${{ github.ref_name }}
-        GIT_USER: ${{ vars.GHCR_USERNAME }}
-        GIT_TOKEN: ${{ secrets.CONTAINER_REGISTRY_PASSWORD }}
-        HELM_REGISTRY: "${{ secrets.CONTAINER_REGISTRY_URL }}/charts"
-        DOCKER_REPO_BASE: ${{ secrets.CONTAINER_REGISTRY_URL }}
-
-    - name: Publish Public Helm Chart
-      run: make helm-release
-      env:
-        VERSION: ${{ github.ref_name }}
-        TAG: ${{ github.ref_name }}
-        GIT_USER: ${{ vars.GHCR_USERNAME }}
-        GIT_TOKEN: ${{ secrets.CONTAINER_REGISTRY_PASSWORD }}
-        HELM_REGISTRY: "${{ secrets.CONTAINER_REGISTRY_URL }}/public/charts"
-        DOCKER_REPO_BASE: ${{ secrets.CONTAINER_REGISTRY_URL }}/public
+    #- name: Publish Helm Chart
+    #  run: make helm-release
+    #  env:
+    #    VERSION: ${{ github.ref_name }}
+    #    TAG: ${{ github.ref_name }}
+    #    GIT_USER: ${{ vars.GHCR_USERNAME }}
+    #    GIT_TOKEN: ${{ secrets.CONTAINER_REGISTRY_PASSWORD }}
+    #    HELM_REGISTRY: "${{ secrets.CONTAINER_REGISTRY_URL }}/charts"
+    #    DOCKER_REPO_BASE: ${{ secrets.CONTAINER_REGISTRY_URL }}
+    #
+    #- name: Publish Public Helm Chart
+    #  run: make helm-release
+    #  env:
+    #    VERSION: ${{ github.ref_name }}
+    #    TAG: ${{ github.ref_name }}
+    #    GIT_USER: ${{ vars.GHCR_USERNAME }}
+    #    GIT_TOKEN: ${{ secrets.CONTAINER_REGISTRY_PASSWORD }}
+    #    HELM_REGISTRY: "${{ secrets.CONTAINER_REGISTRY_URL }}/public/charts"
+    #    DOCKER_REPO_BASE: ${{ secrets.CONTAINER_REGISTRY_URL }}/public
