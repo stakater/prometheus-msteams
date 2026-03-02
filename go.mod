@@ -20,6 +20,7 @@ require (
 	github.com/stretchr/testify v1.11.1
 	go.opencensus.io v0.24.0
 	gopkg.in/yaml.v2 v2.4.0
+	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/helm v2.17.0+incompatible
 )
 
@@ -133,6 +134,5 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260223185530-2f722ef697dc // indirect
 	google.golang.org/grpc v1.78.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/apimachinery v0.35.1 // indirect
 )
