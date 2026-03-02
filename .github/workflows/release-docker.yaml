@@ -20,6 +20,20 @@ jobs:
     permissions:
       contents: write
 
+    strategy:
+      matrix:
+        include:
+        - platform: linux/amd64
+        - platform: linux/arm64
+        #- platform: linux/riscv64
+        #- platform: linux/ppc64le
+        #- platform: linux/s390x
+        #- platform: linux/386
+        #- platform: linux/arm/v7
+        #- platform: linux/arm/v6
+      fail-fast: false
+
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -56,17 +70,38 @@ jobs:
           sudo chmod +x /usr/local/bin/yq
 
       - name: Building Docker image - release version
-        run: make docker-buildx
+        run: make docker-build
         env:
+          DOCKER_BUILD_ARGS: --platform=${{ matrix.platform }}
           DOCKER_TAG_BASE: ${{ steps.docker.outputs.IMAGE_REPOSITORY }}
           VERSION: ${{ github.event.release.tag_name }}
           COMMIT: ${{ github.sha }}
           BRANCH: ${{ github.ref_name }}
 
       - name: Building Docker image - latest
-        run: make docker-buildx
+        run: make docker-build
         env:
+          DOCKER_BUILD_ARGS: --platform=${{ matrix.platform }}
           DOCKER_TAG_BASE: ${{ steps.docker.outputs.IMAGE_REPOSITORY }}
           VERSION: latest
           COMMIT: ${{ github.sha }}
           BRANCH: ${{ github.ref_name }}
+
+      #- name: Building Docker image - release version
+      #  run: make docker-buildx
+      #  env:
+      #    DOCKER_TAG_BASE: ${{ steps.docker.outputs.IMAGE_REPOSITORY }}
+      #    VERSION: ${{ github.event.release.tag_name }}
+      #    COMMIT: ${{ github.sha }}
+      #    BRANCH: ${{ github.ref_name }}
+
+      #- name: Building Docker image - latest
+      #  run: make docker-buildx
+      #  env:
+      #    DOCKER_TAG_BASE: ${{ steps.docker.outputs.IMAGE_REPOSITORY }}
+      #    VERSION: latest
+      #    COMMIT: ${{ github.sha }}
+      #    BRANCH: ${{ github.ref_name }}
+
+      - name: Show Docker images registry
+        run: docker image ls ${{ steps.docker.outputs.IMAGE_REPOSITORY }} --tree
