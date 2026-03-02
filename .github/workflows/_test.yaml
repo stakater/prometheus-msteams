@@ -8,10 +8,6 @@ on:
         type: string
         default: ""
 
-env:
-  REGISTRY: ghcr.io/stakater
-  GHCR_USERNAME: stakater-user
-
 jobs:
   test:
     name: Run tests

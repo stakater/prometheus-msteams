@@ -1,16 +1,8 @@
-name: Release Charts
+name: Release - Helm Chart
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'chart/**'
-
-env:
-  REGISTRY: ghcr.io/stakater
-  GHCR_USERNAME: stakater-user
-  HELM_VERSION: v3.19.0
+  release:
+    types: [published]
 
 jobs:
   chart-lint-test:

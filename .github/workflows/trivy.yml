@@ -18,10 +18,6 @@ on:
 permissions:
   contents: read
 
-env:
-  REGISTRY: ghcr.io/stakater
-  GHCR_USERNAME: stakater-user
-
 jobs:
   build:
     permissions:

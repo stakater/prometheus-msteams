@@ -3,11 +3,6 @@ name: Test
 on:
   workflow_call:
 
-env:
-  REGISTRY: ghcr.io/stakater
-  GHCR_USERNAME: stakater-user
-  HELM_VERSION: v3.19.0
-
 jobs:
   chart-lint-test:
     name: Lint and Test Helm Chart

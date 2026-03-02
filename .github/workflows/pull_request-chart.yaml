@@ -1,4 +1,4 @@
-name: Release Charts
+name: Pull Request - Helm Chart
 
 on:
   push:
@@ -11,11 +11,6 @@ on:
       - 'main'
     paths:
       - 'chart/**'
-
-env:
-  REGISTRY: ghcr.io/stakater
-  GHCR_USERNAME: stakater-user
-  HELM_VERSION: v3.19.0
 
 jobs:
   chart-lint-test:
