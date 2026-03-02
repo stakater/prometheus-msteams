@@ -16,7 +16,7 @@ jobs:
           fetch-depth: 0
 
       - name: Cache Helm
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cache/helm
           key: helm-${{ vars.HELM_VERSION }}-${{ runner.os }}

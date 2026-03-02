@@ -46,7 +46,7 @@ jobs:
           CONTAINER_REGISTRY_PASSWORD: ${{ secrets.GHCR_TOKEN }}
 
       - name: Cache Helm
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cache/helm
           key: helm-${{ vars.HELM_VERSION }}-${{ runner.os }}
@@ -58,7 +58,7 @@ jobs:
 
       - name: Cache yq
         id: cache-yq
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: /usr/local/bin/yq
           key: yq-latest-${{ runner.os }}
