@@ -9,6 +9,7 @@ env:
   REGISTRY: ghcr.io/stakater
   GHCR_USERNAME: stakater-user
   HELM_VERSION: v3.19.0
+  DOCKER_PLATFORMS: linux/amd64 linux/arm64
 
 jobs:
   test:
@@ -57,7 +58,7 @@ jobs:
           sudo wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/local/bin/yq
           sudo chmod +x /usr/local/bin/yq
 
-      - name: Build Docker image
+      - name: Building Docker image - release version
         run: make docker-buildx
         env:
           DOCKER_TAG_BASE: ${{ steps.docker.outputs.IMAGE_REPOSITORY }}
@@ -65,51 +66,10 @@ jobs:
           COMMIT: ${{ github.sha }}
           BRANCH: ${{ github.ref_name }}
 
-      - name: Build Docker image
+      - name: Building Docker image - latest
         run: make docker-buildx
         env:
           DOCKER_TAG_BASE: ${{ steps.docker.outputs.IMAGE_REPOSITORY }}
           VERSION: latest
           COMMIT: ${{ github.sha }}
           BRANCH: ${{ github.ref_name }}
-
-      - name: Set version for Helm Chart
-        run: |
-          # Configure git
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-
-          version=${{ github.event.release.tag_name }}
-          # Set appVersion to the release tag
-          yq -i '.appVersion = env(version)' chart/prometheus-msteams/Chart.yaml
-          # Bump chart version (increment patch version)
-          current_version=$(yq '.version' chart/prometheus-msteams/Chart.yaml)
-          IFS='.' read -r major minor patch <<< "$current_version"
-          new_version="${major}.${minor}.$((patch + 1))"
-          yq -i ".version = \"${new_version}\"" chart/prometheus-msteams/Chart.yaml
-
-          git add chart/prometheus-msteams/Chart.yaml
-
-          # Amend the commit with original message + dependency info
-          git commit --amend -m "$original_msg$deps_info"
-          git push --force-with-lease
-
-      - name: Publish Helm Chart
-        run: make helm-release
-        env:
-          VERSION: ${{ github.ref_name }}
-          TAG: ${{ github.ref_name }}
-          GIT_USER: ${{ env.GHCR_USERNAME }}
-          GIT_TOKEN: ${{ secrets.CONTAINER_REGISTRY_PASSWORD }}
-          HELM_REGISTRY: "${{ secrets.CONTAINER_REGISTRY_URL }}/charts"
-          DOCKER_REPO_BASE: ${{ secrets.CONTAINER_REGISTRY_URL }}
-
-      - name: Publish Public Helm Chart
-        run: make helm-release
-        env:
-          VERSION: ${{ github.ref_name }}
-          TAG: ${{ github.ref_name }}
-          GIT_USER: ${{ env.GHCR_USERNAME }}
-          GIT_TOKEN: ${{ secrets.CONTAINER_REGISTRY_PASSWORD }}
-          HELM_REGISTRY: "${{ secrets.CONTAINER_REGISTRY_URL }}/public/charts"
-          DOCKER_REPO_BASE: ${{ secrets.CONTAINER_REGISTRY_URL }}/public

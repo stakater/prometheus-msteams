@@ -15,6 +15,7 @@ on:
 env:
   REGISTRY: ghcr.io/stakater
   GHCR_USERNAME: stakater-user
+  HELM_VERSION: v3.19.0
 
 jobs:
   chart-lint-test:
@@ -30,8 +31,16 @@ jobs:
       with:
         fetch-depth: 2
 
+    - name: Cache Helm
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/helm
+        key: helm-${{ env.HELM_VERSION }}-${{ runner.os }}
+
     - name: Set up Helm
       uses: azure/setup-helm@v4.3.1
+      with:
+        version: ${{ env.HELM_VERSION }}
 
     - name: Publish Helm Chart
       run: make helm-release
