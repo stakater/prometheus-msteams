@@ -52,7 +52,7 @@ import (
 	_ "net/http/pprof" //nolint: gosec
 
 	"github.com/oklog/run"
-	"github.com/peterbourgon/ff"
+	"github.com/peterbourgon/ff/v3"
 	"gopkg.in/yaml.v2"
 )
 
