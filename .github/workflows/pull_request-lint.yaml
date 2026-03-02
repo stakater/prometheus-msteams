@@ -35,26 +35,26 @@ jobs:
         run: make all test
         env:
           DOCKER_TAG_BASE: ${{ steps.docker.outputs.IMAGE_REPOSITORY }}
-          VERSION: ${{ steps.tag.outputs.TAG }}
+          VERSION: ${{ steps.tag.outputs.PR_TAG }}
           COMMIT: ${{ github.sha }}
           BRANCH: ${{ github.ref_name }}
 
       - name: Build Docker image
-        if: github.actor != 'dependabot[bot]'
+        if: endsWith(github.actor, '[bot]') == false
         run: make docker-build
         env:
           DOCKER_TAG_BASE: ${{ steps.docker.outputs.IMAGE_REPOSITORY }}
-          VERSION: ${{ steps.tag.outputs.TAG }}
+          VERSION: ${{ steps.tag.outputs.PR_TAG }}
           COMMIT: ${{ github.sha }}
           BRANCH: ${{ github.ref_name }}
           DOCKER_BUILD_ARGS: --pull --push --cache-to type=inline
 
       - name: Comment on PR
-        if: github.actor != 'dependabot[bot]'
+        if: endsWith(github.actor, '[bot]') == false
         uses: thollander/actions-comment-pull-request@v3
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           comment-tag: ci-report
           message: |-
             @${{ github.actor }} Image is available for testing.
-            `docker pull ${{ steps.docker.outputs.IMAGE_REPOSITORY }}:${{ steps.tag.outputs.TAG }}`
+            `docker pull ${{ steps.docker.outputs.IMAGE_REPOSITORY }}:${{ steps.tag.outputs.PR_TAG }}`
