@@ -1,4 +1,4 @@
-FROM golang:1.25-alpine AS builder
+FROM --platform=${BUILDPLATFORM} golang:1.25-alpine AS builder
 ARG TARGETOS
 ARG TARGETARCH
 ARG VERSION
@@ -14,11 +14,10 @@ RUN apk --no-cache add make git bash ncurses ca-certificates tzdata && \
     CI=1 CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
     VERSION=${VERSION:-dev} COMMIT=${COMMIT:-dirty} BRANCH=${BRANCH:-main} \
     BUILD_DATE=${BUILD_DATE:-"1970-01-01T00:00:00Z"} BINDIR=/workspace/bin \
-    make build && \
-    ls -l /workspace/bin
-    #make all && \
-    
-FROM scratch
+    make build
+    #make all
+
+FROM --platform=${BUILDPLATFORM} scratch
 LABEL description="A lightweight Go Web Server that accepts POST alert message from Prometheus Alertmanager and sends it to Microsoft Teams Channels using an incoming webhook url."
 EXPOSE 2000
 WORKDIR /
