@@ -29,15 +29,28 @@ jobs:
       with:
         version: ${{ vars.HELM_VERSION }}
 
+    - name: Cache yq
+      id: cache-yq
+      uses: actions/cache@v4
+      with:
+        path: /usr/local/bin/yq
+        key: yq-latest-${{ runner.os }}
+
+    - name: Install yq
+      if: steps.cache-yq.outputs.cache-hit != 'true'
+      run: |
+        sudo wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/local/bin/yq
+        sudo chmod +x /usr/local/bin/yq
+
     - name: Set version for Helm Chart
       run: |
         # Configure git
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
 
-        version=${{ github.event.release.tag_name }}
+        version=
         # Set appVersion to the release tag
-        yq -i '.appVersion = env(version)' chart/prometheus-msteams/Chart.yaml
+        yq -i ".appVersion = \"${{ github.event.release.tag_name }}\"" chart/prometheus-msteams/Chart.yaml
         # Bump chart version (increment patch version)
         current_version=$(yq '.version' chart/prometheus-msteams/Chart.yaml)
         IFS='.' read -r major minor patch <<< "$current_version"
