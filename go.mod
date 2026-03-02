@@ -8,6 +8,7 @@ require (
 	github.com/go-kit/log v0.2.1
 	github.com/hashicorp/go-retryablehttp v0.7.8
 	github.com/labstack/echo/v4 v4.15.1
+	github.com/labstack/echo/v5 v5.0.4
 	github.com/oklog/run v1.2.0
 	github.com/onsi/ginkgo/v2 v2.28.1
 	github.com/onsi/gomega v1.39.1
