@@ -35,7 +35,7 @@ import (
 	"github.com/pkg/errors"
 
 	ocprometheus "contrib.go.opencensus.io/exporter/prometheus"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	stdprometheus "github.com/prometheus/client_golang/prometheus"
 	"github.com/stakater/prometheus-msteams/pkg/card"
 	"github.com/stakater/prometheus-msteams/pkg/service"
@@ -52,8 +52,8 @@ import (
 	_ "net/http/pprof" //nolint: gosec
 
 	"github.com/oklog/run"
-	"github.com/peterbourgon/ff"
 	"gopkg.in/yaml.v3"
+	"github.com/peterbourgon/ff/v3"
 )
 
 // PromTeamsConfig is the struct representation of the config file.
@@ -480,7 +480,7 @@ func setupRoutes(cfg Config, tc PromTeamsConfig, logger *utility.Logger, default
 	// Dynamic uri handler: webhook uri is retrieved from request.URL
 	var dr transport.DynamicRoute
 	dr.RequestPath = "/_dynamicwebhook/*"
-	dr.ServiceGenerator = func(c echo.Context) (service.Service, error) {
+	dr.ServiceGenerator = func(c *echo.Context) (service.Service, error) {
 		webhook, err := extractWebhookFromRequest(c.Request(), "/_dynamicwebhook/")
 		if err != nil {
 			err = errors.Wrapf(err, "webhook extraction failed for /_dynamicwebhook/")
@@ -605,7 +605,7 @@ func setupServer(logger *utility.Logger, routes []transport.Route, dRoutes []tra
 	// Pprof.
 	handler.GET("/debug/pprof/*", echo.WrapHandler(http.DefaultServeMux))
 	// Config.
-	handler.GET("/config", func(c echo.Context) error {
+	handler.GET("/config", func(c *echo.Context) error {
 		return c.JSON(200, tc.Connectors)
 	})
 	return handler
