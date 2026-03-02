@@ -102,7 +102,7 @@ linters:
           - github.com/prometheus/alertmanager/template
           - github.com/prometheus/client_golang/prometheus
           - github.com/stakater/prometheus-msteams
-          - gopkg.in/yaml.v2
+          - gopkg.in/yaml.v3
           - k8s.io/helm/pkg/engine
           - github.com/stretchr/testify
           - github.com/onsi/ginkgo/v2

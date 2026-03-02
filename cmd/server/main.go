@@ -53,7 +53,7 @@ import (
 
 	"github.com/oklog/run"
 	"github.com/peterbourgon/ff"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 // PromTeamsConfig is the struct representation of the config file.
