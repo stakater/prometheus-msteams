@@ -26,7 +26,7 @@ import (
 	"testing"
 
 	"github.com/go-kit/log"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/prometheus/alertmanager/notify/webhook"
 	"github.com/prometheus/alertmanager/template"
 	"github.com/stakater/prometheus-msteams/pkg/service"
@@ -56,7 +56,7 @@ func TestNewServer(t *testing.T) {
 
 	dRoutes := []DynamicRoute{
 		{
-			ServiceGenerator: func(_ echo.Context) (service.Service, error) {
+			ServiceGenerator: func(_ *echo.Context) (service.Service, error) {
 				return mockService{}, nil
 			},
 			RequestPath: "/dynamic",
@@ -66,7 +66,6 @@ func TestNewServer(t *testing.T) {
 	server := NewServer(logger, routes, dRoutes)
 
 	assert.NotNil(t, server)
-	assert.True(t, server.HideBanner)
 }
 
 func TestNewServer_EmptyRoutes(t *testing.T) {
@@ -75,7 +74,6 @@ func TestNewServer_EmptyRoutes(t *testing.T) {
 	server := NewServer(logger, []Route{}, []DynamicRoute{})
 
 	assert.NotNil(t, server)
-	assert.True(t, server.HideBanner)
 }
 
 func TestAddRoute_Success(t *testing.T) {
@@ -249,7 +247,7 @@ func TestAddContextAwareRoute_Success(t *testing.T) {
 		err: nil,
 	}
 
-	generator := func(_ echo.Context) (service.Service, error) {
+	generator := func(_ *echo.Context) (service.Service, error) {
 		return mockSvc, nil
 	}
 
@@ -275,7 +273,7 @@ func TestAddContextAwareRoute_Success(t *testing.T) {
 func TestAddContextAwareRoute_GeneratorError(t *testing.T) {
 	logger := log.NewNopLogger()
 
-	generator := func(_ echo.Context) (service.Service, error) {
+	generator := func(_ *echo.Context) (service.Service, error) {
 		return nil, errors.New("generator error")
 	}
 
@@ -301,7 +299,7 @@ func TestAddContextAwareRoute_GeneratorError(t *testing.T) {
 func TestAddContextAwareRoute_NilService(t *testing.T) {
 	logger := log.NewNopLogger()
 
-	generator := func(_ echo.Context) (service.Service, error) {
+	generator := func(_ *echo.Context) (service.Service, error) {
 		return nil, nil
 	}
 
@@ -355,7 +353,7 @@ func TestKitLoggerMiddleware(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	handler := middleware(func(c echo.Context) error {
+	handler := middleware(func(c *echo.Context) error {
 		return c.String(http.StatusOK, "test")
 	})
 
@@ -372,7 +370,7 @@ func TestOpencensusMiddleware(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	handler := middleware(func(c echo.Context) error {
+	handler := middleware(func(c *echo.Context) error {
 		return c.String(http.StatusOK, "test")
 	})
 

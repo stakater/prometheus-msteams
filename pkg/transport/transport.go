@@ -30,7 +30,7 @@ import (
 	"go.opencensus.io/plugin/ochttp"
 	"go.opencensus.io/trace"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/stakater/prometheus-msteams/pkg/service"
 )
 
@@ -47,7 +47,7 @@ type DynamicRoute struct {
 }
 
 // ServiceGenerator creates a service on data from request (echo.Context)
-type ServiceGenerator func(echo.Context) (service.Service, error)
+type ServiceGenerator func(*echo.Context) (service.Service, error)
 
 // NewServer creates the web server.
 func NewServer(logger log.Logger, routes []Route, dRoutes []DynamicRoute) *echo.Echo {
@@ -60,7 +60,6 @@ func NewServer(logger log.Logger, routes []Route, dRoutes []DynamicRoute) *echo.
 		_ = level.Debug(logger).Log("request_path_added", r.RequestPath)
 		addContextAwareRoute(e, r.RequestPath, r.ServiceGenerator, logger)
 	}
-	e.HideBanner = true
 	return e
 }
 
@@ -76,15 +75,19 @@ func opencensusMiddleware() echo.MiddlewareFunc {
 
 func kitLoggerMiddleware(logger log.Logger) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
+		return func(c *echo.Context) error {
 			defer func(begin time.Time) {
-				res := c.Response()
+				resp, err := echo.UnwrapResponse(c.Response())
+				if err != nil {
+					_ = logger.Log("err", err)
+					return
+				}
 				req := c.Request()
 				_ = logger.Log(
 					"method", req.Method,
 					"uri", req.RequestURI,
 					"host", req.Host,
-					"status", res.Status,
+					"status", resp.Status,
 					"took", time.Since(begin),
 				)
 			}(time.Now())
@@ -94,7 +97,7 @@ func kitLoggerMiddleware(logger log.Logger) echo.MiddlewareFunc {
 }
 
 func addRoute(e *echo.Echo, p string, s service.Service, logger log.Logger) {
-	e.POST(p, func(c echo.Context) error {
+	e.POST(p, func(c *echo.Context) error {
 		return handleRoute(c, s, logger)
 	},
 		kitLoggerMiddleware(logger),
@@ -103,7 +106,7 @@ func addRoute(e *echo.Echo, p string, s service.Service, logger log.Logger) {
 }
 
 func addContextAwareRoute(e *echo.Echo, p string, w ServiceGenerator, logger log.Logger) {
-	e.POST(p, func(c echo.Context) error {
+	e.POST(p, func(c *echo.Context) error {
 		s, err := w(c)
 		if err != nil {
 			return err
@@ -118,7 +121,7 @@ func addContextAwareRoute(e *echo.Echo, p string, w ServiceGenerator, logger log
 	)
 }
 
-func handleRoute(c echo.Context, s service.Service, logger log.Logger) error {
+func handleRoute(c *echo.Context, s service.Service, logger log.Logger) error {
 	ctx, span := trace.StartSpan(c.Request().Context(), "alertmanager-handler")
 	defer span.End()
 
