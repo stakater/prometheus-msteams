@@ -59,7 +59,7 @@ jobs:
         echo "COMMIT_MSG=$(git log -1 --pretty=%B)" >> $GITHUB_OUTPUT
 
     - name: Update commit
-      uses: EndBug/add-and-commit@v9
+      uses: EndBug/add-and-commit@v10
       with:
         #author_name: GitHub Action
         #author_email: 'action@github.com'
